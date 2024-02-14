@@ -17,6 +17,8 @@ import argparse
 
 import python_parser
 
+sys.setrecursionlimit(2**30)
+
 class make_true:
     def __init__(self, value):
         self.value = value
@@ -26,10 +28,12 @@ class make_true:
         return repr(self.value)
 
 class token:
-    def __init__(self, s, coord, filename):
+    def __init__(self, s, coord, filename, pos, length):
         self.s = s
         self.coord = coord
         self.filename = filename
+        self.pos = pos
+        self.length = length
     def __pos__(self):
         return self.s
     def __repr__(self):
@@ -47,7 +51,9 @@ class token:
         return token(
             s,
             self.coord,
-            self.filename
+            self.filename,
+            self.pos,
+            self.length,
         )
 
 re_cache={}
@@ -94,7 +100,7 @@ class char_tokenizer:
                     # assert self.line_starts_list == sorted(self.line_starts_list)
         coord = self.get_coordinates()
         self.pos += length
-        return token(res, coord, self.filename)
+        return token(res, coord, self.filename, self.pos-length, length)
 
 indent_cache = {}
 
@@ -120,34 +126,35 @@ class char_parser(python_parser.GeneratedParser):
         self._args_level = []
         self._stre_level = []
         self._bin_op_to_ast = {
-            '+': ast.Add(),
-            '-': ast.Sub(),
-            '*': ast.Mult(),
-            '/': ast.Div(),
-            '//': ast.FloorDiv(),
-            '%': ast.Mod(),
-            '<<': ast.LShift(),
-            '>>': ast.RShift(),
-            '^': ast.BitXor(),
-            '&': ast.BitAnd(),
-            '|': ast.BitOr(),
-            '**': ast.Pow(),
-            '<': ast.Lt(),
-            '<=': ast.LtE(),
-            '>': ast.Gt(),
-            '>=': ast.GtE(),
-            '==': ast.Eq(),
-            '!=': ast.NotEq(),
+            '+': ast.Add,
+            '-': ast.Sub,
+            '*': ast.Mult,
+            '/': ast.Div,
+            '//': ast.FloorDiv,
+            '%': ast.Mod,
+            '<<': ast.LShift,
+            '>>': ast.RShift,
+            '^': ast.BitXor,
+            '&': ast.BitAnd,
+            '|': ast.BitOr,
+            '**': ast.Pow,
+            '<': ast.Lt,
+            '<=': ast.LtE,
+            '>': ast.Gt,
+            '>=': ast.GtE,
+            '==': ast.Eq,
+            '!=': ast.NotEq,
+            '@': ast.MatMult,
         }
         self._un_op_to_ast = {
-            '+': ast.UAdd(),
-            '-': ast.USub(),
-            '~': ast.Invert(),
+            '+': ast.UAdd,
+            '-': ast.USub,
+            '~': ast.Invert,
         }
     # @pegen.parser.memoize
     def expect(self, type: str):
         return self._tokenizer.expect(type)
-    def unicode_lookup(self, query):
+    def _unicode_lookup(self, query):
         try:
             return unicodedata.lookup(query)
         except KeyError:
@@ -156,7 +163,7 @@ class char_parser(python_parser.GeneratedParser):
         return super().start_indent.__wrapped__(self)
     def stop_indent(self) -> Any | None:
         return super().stop_indent.__wrapped__(self)
-    def error(self):
+    def _error(self):
         raise TabError
     def _update_indent(self):
         key = tuple(self._indent_levels)
@@ -165,6 +172,35 @@ class char_parser(python_parser.GeneratedParser):
         self._indent_num = indent_cache[key]
         if self._indent_num not in self._caches:
             self._caches[self._indent_num] = {}
+    def _join_str(self, tokens):
+        values1 = []
+        has_joined_str=0
+        for q in tokens:
+            if isinstance(q, ast.JoinedStr):
+                values1.extend(q.values)
+                has_joined_str=1
+            else:
+                values1.append(q)
+        assert all([isinstance(w, ast.Constant|ast.FormattedValue) for w in values1])
+        values2 = []
+        for q in values1:
+            if isinstance(q, ast.Constant) and values2 and isinstance(values2[-1], ast.Constant):
+                if {type(values2[-1].value), type(q.value)} == {bytes, str}:
+                    return None
+                values2[-1].value += q.value
+            else:
+                values2.append(q)
+        for value in values2:
+            if isinstance(value, ast.FormattedValue):
+                if value.format_spec:
+                    value.format_spec = self._join_str([value.format_spec])
+        if len(values2) == 1 and isinstance(values2[0], ast.Constant) and not has_joined_str:
+            return values2[0]
+        else:
+            return ast.JoinedStr(token=tokens[0].token, values=values2)
+
+
+
 
 def create_ast(text, filename, verbose=0):
     tokenizer = char_tokenizer(text, filename)
@@ -209,6 +245,23 @@ def ast_equal(ast1, ast2):
         )
     )
 
+def all_have_tokens(root):
+    return (
+        (1 if isinstance(root.token, token) else print(root)) and all([
+            all_have_tokens(getattr(root, field))
+            for field in root._fields
+        ])
+        if isinstance(root, ast.AST) else
+        all([
+            all_have_tokens(field)
+            for field in root
+        ])
+        if isinstance(root, list) else
+            True
+        if type(root) in [int, type(None), bool, str, bytes, type(...), float, complex] else
+            print(root)
+    )
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('filename')
@@ -216,11 +269,15 @@ if __name__ == '__main__':
     args = parser.parse_args()
     filename = args.filename
     verbose = bool(args.verbose)
-    text=open(filename).read()
+    with open(filename) as file:
+        text=file.read()
+    ast2 = ast.parse(text, filename)
+    if re.search(r'\bMatch\b', ast.dump(ast2)):
+        exit()
+    if verbose:
+        print(ast.dump(ast2, indent=4))
     ast1 = create_ast(text, filename, verbose)
     if verbose:
         print(ast.dump(ast1, indent=4))
-    ast2 = ast.parse(text, filename)
-    if verbose:
-        print(ast.dump(ast2, indent=4))
+    assert all_have_tokens(ast1)
     assert ast_equal(ast1, ast2)
