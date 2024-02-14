@@ -266,18 +266,19 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('filename')
     parser.add_argument('--verbose', action='store_true')
+    parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
     filename = args.filename
     verbose = bool(args.verbose)
+    check = bool(args.check)
     with open(filename) as file:
         text=file.read()
-    ast2 = ast.parse(text, filename)
-    if re.search(r'\bMatch\b', ast.dump(ast2)):
-        exit()
-    if verbose:
-        print(ast.dump(ast2, indent=4))
     ast1 = create_ast(text, filename, verbose)
-    if verbose:
+    if verbose or not check:
         print(ast.dump(ast1, indent=4))
-    assert all_have_tokens(ast1)
-    assert ast_equal(ast1, ast2)
+    if check:
+        ast2 = ast.parse(text, filename)
+        if verbose:
+            print(ast.dump(ast2, indent=4))
+        assert all_have_tokens(ast1)
+        assert ast_equal(ast1, ast2)
