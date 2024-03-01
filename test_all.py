@@ -3,8 +3,11 @@ import os
 import ast
 import re
 import time
+from collections import defaultdict as dd
+import itertools
 
 import create_ast
+import dump_ast
 
 def walk(path: str):
     for (dirpath, dirnames, filenames) in os.walk(path):
@@ -13,12 +16,10 @@ def walk(path: str):
                 yield os.path.join(dirpath, name)
 
 
+files = dict([*zip(walk(os.path.dirname(os.path.realpath(__file__))), map(dict, itertools.repeat({})))][:])
 
-tty = open('/dev/tty','w')
-
-@pytest.mark.parametrize('filepath', walk(os.path.dirname(os.path.realpath(__file__))))
+@pytest.mark.parametrize('filepath', files)
 def test_ast(filepath):
-    t = time.monotonic()
     with open(filepath) as file:
         text = file.read()
     ast2 = ast.parse(text, filepath)
@@ -28,10 +29,11 @@ def test_ast(filepath):
         ast1 = create_ast.create_ast(text, filepath)
     except Exception:
         ast1 = None
-    t = time.monotonic() - t
-    result = create_ast.ast_equal(ast1, ast2) and create_ast.all_have_tokens(ast1)
-    if not result:
-        print(filepath, file=tty)
-        tty.flush()
-    assert result
+    files[filepath]['ast'] = ast1
+    assert create_ast.ast_equal(ast1, ast2) and create_ast.all_have_tokens(ast1)
 
+@pytest.mark.parametrize('filepath', files)
+def test_dump(filepath):
+    if 'ast' in files[filepath]:
+        tree = files[filepath]['ast']
+        assert dump_ast.dump_ast(tree) == ast.dump(tree)
