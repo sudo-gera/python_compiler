@@ -1,16 +1,16 @@
 # spaces
 
+new_line: token=r'(#[^\n]*)?(\n|$)' { token }
+
 spaces:
-    | spaces_in_brackets
+    | 'if_in_brackets\0' spaces_in_brackets
     | spaces_not_in_brackets
 
-spaces_in_brackets: tokens=(!r'$' new_line).spaces_not_in_brackets+ { tokens[0] if self._bracket_level else None }
+spaces_in_brackets: tokens=(!r'$' new_line).spaces_not_in_brackets+ { tokens[0] }
 
 spaces_not_in_brackets: token=r'([^\S\n]|\\\n)*' { token }
 
 spaces_for_indent: token=r'[^\S\n]*' { token }
-
-new_line: token=r'(#[^\n]*)?(\n|$)' { token }
 
 # tokens
 
@@ -149,64 +149,18 @@ start_stre_qqq: r'' {[self._stre_level.append('\042\042\042')]}
 start_stre_aaa: r'' {[self._stre_level.append('\047\047\047')]}
 start_stre_b: r'' {[self._stre_level.append('\175')]}
 
+stre1: token=r'.' { [token,self._stre_level.pop()][0] if +token==self._stre_level[-1] else None }
+stre3: token=r'...' { [token,self._stre_level.pop()][0] if +token==self._stre_level[-1] else None }
+
 stre:
     | stre1
     | stre3
 
-
-stre1: token=r'.' { [token,self._stre_level.pop()][0] if +token==self._stre_level[-1] else None }
-stre3: token=r'...' { [token,self._stre_level.pop()][0] if +token==self._stre_level[-1] else None }
-
-simple_str_char:
-    | token='\\\\\n' { token('') }
-    | token='\\\\\\\\' { token('\\') }
-    | token='\\\\\47' { token("\47") }
-    | token='\\\\\42' { token('\42') }
-    | token='\\\\a' { token('\7') }
-    | token='\\\\b' { token('\10') }
-    | token='\\\\t' { token('\11') }
-    | token='\\\\n' { token('\12') }
-    | token='\\\\v' { token('\13') }
-    | token='\\\\f' { token('\14') }
-    | token='\\\\r' { token('\15') }
-    | token='\\\\[0-7][0-7]?[0-7]?' { token(chr(int(token()[1:], 8))) }
-    | token='\\\\x[0-9a-fA-F]{2}' { token(chr(int(token()[2:], 16))) }
-    | token='\\\\N\\{[^}]*\\}' { [None if c is None else token(c) for c in [self._unicode_lookup(token()[3:-1])]][0] }
-    | token='\\\\u[0-9a-fA-F]{4}' { token(chr(int(token()[2:], 16))) }
-    | token='\\\\U[0-9a-fA-F]{8}' { [token(chr(c)) if c < 0x110000 else None for c in [int(token()[2:], 16)]][0] }
-    | token='\\\\.' { token }
-    | token=r'.' { token if +token!='\n' or len(self._stre_level[-1])==3 else self.error()}
-
-simple_str_end:
-    | a=stre { a('') }
-    | a=simple_str_char b=simple_str_end { a+b }
-
-simple_str:
-    | token='\x27\x27\x27' start_stre_aaa data=simple_str_end { token(data) }
-    | token='\x22\x22\x22' start_stre_qqq data=simple_str_end { token(data) }
-    | token='\x27' start_stre_a data=simple_str_end { token(data) }
-    | token='\x22' start_stre_q data=simple_str_end { token(data) }
-
-raw_str_char:
-    | token='\\\\\47' { token("\\\47") }
-    | token='\\\\\42' { token('\\\42') }
-    | token=r'.' { token if +token!='\n' or len(self._stre_level[-1])==3 else self.error()}
-
-raw_str_end:
-    | a=stre { a('') }
-    | a=raw_str_char b=raw_str_end { a+b }
-
-raw_str:
-    | token='\x27\x27\x27' start_stre_aaa data=raw_str_end { token(data) }
-    | token='\x22\x22\x22' start_stre_qqq data=raw_str_end { token(data) }
-    | token='\x27' start_stre_a data=raw_str_end { token(data) }
-    | token='\x22' start_stre_q data=raw_str_end { token(data) }
-
-formatted_str_char:
-    | a=r'\{\{' { a('\173') }
-    | a=r'\}\}' { a('\175') }
-    | a=r'\{\}' { None }
-    | a=r'\{' value_begin=spaces value=f_expression as_token=assign_token? conversion='(![ras])?' format_spec=(r':' start_stre_b formatted_str_end | r'\}') {
+str_char:
+    | 'str\0f'  token='\\{\\{'                { a('\173') }
+    | 'str\0f'  token='\\}\\}'                { a('\175') }
+    | 'str\0f'  token='\\{\\}'                { None }
+    | 'str\0f'  a=r'\{' value_begin=spaces value=f_expression as_token=assign_token? conversion='(![ras])?' format_spec=(r':' 'append_str\0f' start_stre_b str_end 'pop_str\0f' | r'\}') {
         [
             ast.Constant(
                 token = a,
@@ -216,113 +170,75 @@ formatted_str_char:
                 token = a,
                 value=value,
                 conversion=ord(conversion()[-1]) if +conversion else 114 if isinstance(format_spec, self._token) and as_token else -1,
-                format_spec=None if isinstance(format_spec, self._token) else ast.JoinedStr(token=a, values=[values if not values or isinstance(values[-1],ast.Constant) else values+[ast.Constant(value='')] for values in [+format_spec[2]]][0]),
+                format_spec=(
+                    None
+                        if isinstance(format_spec, self._token) else
+                    ast.JoinedStr(
+                        token=a,
+                        values=[
+                            values
+                                if not values or isinstance(values[-1],ast.Constant) else
+                            values+[ast.Constant(token=format_spec[0], value='')]
+                        for values in [+format_spec[3]]][0]
+                    )
+                )
             )
-        ][0 if as_token else 1:]
+        ][not as_token:]
     }
-    | simple_str_char
+    | 'str\0'   token='\\\\\n'                { token('') if 'r' not in self._str_level[-1] else token }
+    | 'str\0'   token='\\\\\\\\'              { token('\\') if 'r' not in self._str_level[-1] else token }
+    | 'str\0'   token='\\\\\47'               { token("\47") if 'r' not in self._str_level[-1] else token("\\\47") }
+    | 'str\0'   token='\\\\\42'               { token('\42') if 'r' not in self._str_level[-1] else token("\\\42") }
+    | 'str\0R'  token='\\\\a'                 { token('\7')  }
+    | 'str\0R'  token='\\\\b'                 { token('\10') }
+    | 'str\0R'  token='\\\\t'                 { token('\11') }
+    | 'str\0R'  token='\\\\n'                 { token('\12') }
+    | 'str\0R'  token='\\\\v'                 { token('\13') }
+    | 'str\0R'  token='\\\\f'                 { token('\14') }
+    | 'str\0R'  token='\\\\r'                 { token('\15') }
+    | 'str\0R'  token='\\\\[0-7][0-7]?[0-7]?' { token(chr([c if 'b' not in self._str_level[-1] else c % 256 for c in [int(token()[1:], 8)]][0])) }
+    | 'str\0R'  token='\\\\x[0-9a-fA-F]{2}'   { token(chr(int(token()[2:], 16))) }
+    | 'str\0RB' token='\\\\N\\{[^}]*\\}'      { [None if c is None else token(c) for c in [self._unicode_lookup(token()[3:-1])]][0] }
+    | 'str\0RB' token='\\\\u[0-9a-fA-F]{4}'   { token(chr(int(token()[2:], 16))) if 'r' not in self._str_level[-1] else token }
+    | 'str\0RB' token='\\\\U[0-9a-fA-F]{8}'   { [token(chr(c)) if c < 0x110000 else None for c in [int(token()[2:], 16)]][0] if 'r' not in self._str_level[-1] else token }
+    | 'str\0'   token=r'\n'                   { token if len(self._stre_level[-1])==3 else self._error() }
+    | 'str\0B'   token=r'[^{}\42\47\\\n]+'    { token }
+    | 'str\0b'   token=r'[^{}\42\47\\\n]+'    { token if all([len(t.encode())<2 for t in +token]) else None }
+    | 'str\0b'   token=r'.'                   { token if all([len(t.encode())<2 for t in +token]) else None }
+    | 'str\0B'   token=r'.'                   { token }
 
-formatted_str_end:
+str_end:
     | a=stre { self._make_true([]) }
-    | a=formatted_str_char b=formatted_str_end {
-        self._make_true(
-            a+(+b)
-                if not isinstance(a, self._token) else
-            [ast.Constant(token=a, value=+a)] + (+b)
-        )
-    }
-
-formatted_str:
-    | token='\x27\x27\x27' start_stre_aaa data=formatted_str_end { data }
-    | token='\x22\x22\x22' start_stre_qqq data=formatted_str_end { data }
-    | token='\x27' start_stre_a data=formatted_str_end { data }
-    | token='\x22' start_stre_q data=formatted_str_end { data }
-
-raw_formatted_str_char:
-    | a=r'\{\{' { a('\173') }
-    | a=r'\}\}' { a('\175') }
-    | a=r'\{\}' { None }
-    | a=r'\{' value_begin=spaces value=f_expression as_token=assign_token? conversion='(![ras])?' format_spec=(r':' start_stre_b formatted_str_end | r'\}') {
+    | a=str_char b=str_end {
         [
-            ast.Constant(
-                token = a,
-                value=self._tokenizer.text[value_begin.pos:conversion.pos] if as_token else '',
-            ),
-            ast.FormattedValue(
-                token = a,
-                value=value,
-                conversion=ord(conversion()[-1]) if +conversion else 114 if isinstance(format_spec, self._token) and as_token else -1,
-                format_spec=None if isinstance(format_spec, self._token) else ast.JoinedStr(token=a, values=[values if not values or isinstance(values[-1],ast.Constant) else values+[ast.Constant(value='')] for values in [+format_spec[2]]][0]),
-            )
-        ][0 if as_token else 1:]
-    }
-    | raw_str_char
-
-raw_formatted_str_end:
-    | a=stre { self._make_true([]) }
-    | a=raw_formatted_str_char b=raw_formatted_str_end {
-        self._make_true(
-            a+(+b)
+            b().extend(a[::-1])
                 if not isinstance(a, self._token) else
-            [ast.Constant(token=a, value=+a)] + (+b)
-        )
+            b().append(ast.Constant(token=a, value=+a)),
+            b
+        ][1]
     }
 
-raw_formatted_str:
-    | token='\x27\x27\x27' start_stre_aaa data=raw_formatted_str_end { data }
-    | token='\x22\x22\x22' start_stre_qqq data=raw_formatted_str_end { data }
-    | token='\x27' start_stre_a data=raw_formatted_str_end { data }
-    | token='\x22' start_stre_q data=raw_formatted_str_end { data }
+str_content:
+    | token='\x27\x27\x27' start_stre_aaa data=str_end { data }
+    | token='\x22\x22\x22' start_stre_qqq data=str_end { data }
+    | token='\x27' start_stre_a data=str_end { data }
+    | token='\x22' start_stre_q data=str_end { data }
 
-byte_str_char:
-    | token='\\\\\n' { token(b'') }
-    | token='\\\\\\\\' { token(b'\\') }
-    | token='\\\\\47' { token(b'\47') }
-    | token='\\\\\42' { token(b'\42') }
-    | token='\\\\a' { token(b'\7') }
-    | token='\\\\b' { token(b'\10') }
-    | token='\\\\t' { token(b'\11') }
-    | token='\\\\n' { token(b'\12') }
-    | token='\\\\v' { token(b'\13') }
-    | token='\\\\f' { token(b'\14') }
-    | token='\\\\r' { token(b'\15') }
-    | token='\\\\[0-7][0-7]?[0-7]?' { token(bytes([int(token()[1:], 8) % 256])) }
-    | token='\\\\x[0-9a-fA-F]{2}' { token(bytes([int(token()[2:], 16) % 256])) }
-    | token='\\\\.' { token(token().encode()) if len(token()[1].encode())<2 else None }
-    | token=r'.' { token(token().encode()) if +token!='\n' or len(self._stre_level[-1])==3 else self.error() if len(token()[0].encode())<2 else None }
+formatted_str_data: data=str_content { self._make_true(data()[::-1]) }
 
-byte_str_end:
-    | a=stre { a(b'') }
-    | a=byte_str_char b=byte_str_end { a+b }
+simple_str_data: data=formatted_str_data { self._make_true(''.join([n.value for n in +data])) }
 
-byte_str:
-    | token='\x27\x27\x27' start_stre_aaa data=byte_str_end { token(data) }
-    | token='\x22\x22\x22' start_stre_qqq data=byte_str_end { token(data) }
-    | token='\x27' start_stre_a data=byte_str_end { token(data) }
-    | token='\x22' start_stre_q data=byte_str_end { token(data) }
+byte_str_data: data=simple_str_data { self._make_true(bytes([*map(ord, +data)])) }
 
-raw_byte_str_char:
-    | token='\\\\\47' { token(b'\\\47') }
-    | token='\\\\\42' { token(b'\\\42') }
-    | token=r'.' { token(token().encode()) if +token!='\n' or len(self._stre_level[-1])==3 else self.error() if len(token()[0].encode())<2 else None }
 
-raw_byte_str_end:
-    | a=stre { a(b'') }
-    | a=raw_byte_str_char b=raw_byte_str_end { a+b }
-
-raw_byte_str:
-    | token='\x27\x27\x27' start_stre_aaa data=raw_byte_str_end { token(data) }
-    | token='\x22\x22\x22' start_stre_qqq data=raw_byte_str_end { token(data) }
-    | token='\x27' start_stre_a data=raw_byte_str_end { token(data) }
-    | token='\x22' start_stre_q data=raw_byte_str_end { token(data) }
 
 str_with_prefix:
-    | token=r'[Uu]?' data=simple_str { ast.Constant(token=token, value=+data, kind=+token if +token else None) }
-    | token=r'[fF]' data=formatted_str { ast.JoinedStr(token=token, values=+data) }
-    | token=r'[rR]' data=raw_str { ast.Constant(token=token, value=+data) }
-    | token=r'[Ff][Rr]|[Rr][Ff]' data=raw_formatted_str { ast.JoinedStr(token=token, values=+data) }
-    | token=r'[Bb]' data=byte_str { ast.Constant(token=token, value=+data) }
-    | token=r'[Rr][Bb]|[Bb][Rr]' data=raw_byte_str { ast.Constant(token=token, value=+data) }
+    | token=r'[Rr][Bb]|[Bb][Rr]' 'append_str\0br' data=byte_str_data?      'pop_str\0br' { ast.Constant(token=token,  value=+data) if data else None }
+    | token=r'[Ff][Rr]|[Rr][Ff]' 'append_str\0fr' data=formatted_str_data? 'pop_str\0fr' { ast.JoinedStr(token=token, values=+data) if data else None }
+    | token=r'[Bb]'              'append_str\0b'  data=byte_str_data?      'pop_str\0b'  { ast.Constant(token=token,  value=+data) if data else None }
+    | token=r'[fF]'              'append_str\0f'  data=formatted_str_data? 'pop_str\0f'  { ast.JoinedStr(token=token, values=+data) if data else None }
+    | token=r'[rR]'              'append_str\0r'  data=simple_str_data?    'pop_str\0r'  { ast.Constant(token=token,  value=+data) if data else None }
+    | token=r'[Uu]?'             'append_str\0'   data=simple_str_data?    'pop_str\0'   { ast.Constant(token=token,  value=+data, kind=+token if +token else None) if data else None }
 
 stringliteral: tokens=(str_with_prefix spaces)+ {
     self._join_str([token[0] for token in tokens])
@@ -375,7 +291,7 @@ set_name: token=identifier { ast.Name(token=token, id=+token, ctx=ast.Store(toke
 
 del_name: token=identifier { ast.Name(token=token, id=+token, ctx=ast.Del(token=token)) }
 
-get_attributeref: value=primary dot_token attr=identifier { ast.Attribute(token=value.token, value=value, attr=+attr, ctx=ast.Load(token=value.token)) }
+get_attributeref_suffix: dot_token attr=identifier { lambda value: ast.Attribute(token=value.token, value=value, attr=+attr, ctx=ast.Load(token=value.token)) }
 
 set_attributeref: value=primary { ast.Attribute(token=value.token, value=value.value, attr=value.attr, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Attribute) else None }
 
@@ -385,7 +301,7 @@ sub_item: #local
     | lower=[expression] token=colon_token upper=[expression] step=[ colon_token [expression] ] { ast.Slice(token=token, lower=lower, upper=upper, step=step[1] if step else None) }
     | expression
 
-get_subscription: value=primary left_bracket_token slices=comma_token.sub_item+ tc=comma_token? right_bracket_token { ast.Subscript(token=value.token, value=value, slice=ast.Tuple(token=value.token, elts=slices, ctx=ast.Load(token=value.token)) if len(slices) != 1 or tc else slices[0], ctx=ast.Load(token=value.token)) }
+get_subscription_suffix: left_bracket_token slices=comma_token.sub_item+ tc=comma_token? right_bracket_token { lambda value: ast.Subscript(token=value.token, value=value, slice=ast.Tuple(token=value.token, elts=slices, ctx=ast.Load(token=value.token)) if len(slices) != 1 or tc else slices[0], ctx=ast.Load(token=value.token)) }
 
 set_subscription: value=primary { ast.Subscript(token=value.token, value=value.value, slice=value.slice, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Subscript) else None }
 
@@ -471,18 +387,22 @@ call_args: '' args=[comma_token.call_arg+ comma_token?] {
     None
 }
 
-call: func=primary left_paren_token args=(walrus_expression comp_for | call_args) right_paren_token {
-    ast.Call(token=func.token, func=func, args=[ast.GeneratorExp(token=func.token, elt=args[0], generators=+args[1])], keywords=[])
-        if isinstance(args, list) else
-    ast.Call(token=func.token, func=func, args=args['args'], keywords=args['keywords'])
+call_suffix: token=left_paren_token args=(walrus_expression comp_for | call_args) right_paren_token {
+    lambda func: (
+        ast.Call(token=token, func=func, args=[ast.GeneratorExp(token=func.token, elt=args[0], generators=+args[1])], keywords=[])
+            if isinstance(args, list) else
+        ast.Call(token=token, func=func, args=args['args'], keywords=args['keywords'])
+    )
 }
 
 # primary
 
-primary:
-    | get_attributeref
-    | get_subscription
-    | call
+suffix:
+    | call_suffix
+    | get_subscription_suffix
+    | get_attributeref_suffix
+
+atom:
     | tuple_display
     | list_display
     | dict_display
@@ -491,6 +411,14 @@ primary:
     | constant
     | get_name
     | arithmetic_parentheses
+
+primary: value=atom suffixes=suffix* {
+    self._functools.reduce(
+        lambda value, suffix: suffix(value),
+        suffixes,
+        value,
+    )
+}
 
 # operators
 
@@ -567,10 +495,6 @@ f_expression:
 
 # indentation
 
-start_indent: r'' {[self._indent_levels.append(None), self._update_indent()]}
-
-stop_indent: r'' {[self._indent_levels.pop(), self._update_indent()]}
-
 start_bracket: r'' {[self._bracket_level.append(None)]}
 
 stop_bracket: r'' {[self._bracket_level.pop()]}
@@ -612,7 +536,7 @@ line: #local
     | spaces new_line { self._make_true([]) }
     | a=line_content { a }
 
-code_block: start_indent a=line+ stop_indent {
+code_block: 'append_indent\0' a=line+ 'pop_indent\0' {
     self._make_true([d for s in a for d in +s])
 } #local
 
@@ -801,9 +725,10 @@ decorator_or_spaces:
     | decorator
     | spaces new_line { ... }
 decorator_list: a=decorator_or_spaces* { self._make_true([q for q in a if q is not ...]) }
-func_def: decorator_list=decorator_list indent token=def_token name=identifier type_params=[type_params] left_paren_token args=parameter_list_func right_paren_token returns=[returns_token expression] body=colon_and_func_body {
-    ast.FunctionDef(
-        token=token,
+
+func_signature: def_token=def_token name=identifier type_params=[type_params] left_paren_token args=parameter_list_func? right_paren_token returns=[returns_token expression] {
+    lambda decorator_list, a_token, body: (ast.AsyncFunctionDef if a_token else ast.FunctionDef)(
+        token=a_token if a_token else def_token,
         decorator_list=+decorator_list,
         name=+name,
         type_params=+type_params if type_params else [],
@@ -813,16 +738,12 @@ func_def: decorator_list=decorator_list indent token=def_token name=identifier t
     )
 }
 
-coro_def: decorator_list=decorator_list indent token=async_token def_token name=identifier type_params=[type_params] left_paren_token args=parameter_list_func? right_paren_token returns=[returns_token expression] body=colon_and_coro_body {
-    ast.AsyncFunctionDef(
-        token=token,
-        decorator_list=+decorator_list,
-        name=+name,
-        type_params=+type_params if type_params else [],
-        args=args,
-        returns=returns[1] if returns else None,
-        body=+body,
-    )
+func_def: decorator_list=decorator_list indent data=func_signature body=colon_and_func_body {
+    data(decorator_list, None, body)
+}
+
+coro_def: decorator_list=decorator_list indent a_token=async_token data=func_signature body=colon_and_coro_body {
+    data(decorator_list, a_token, body)
 }
 
 # targets
@@ -853,7 +774,7 @@ del_array_target: #local
 
 set_array_targets: comma_token.set_array_target+ comma_token? #local
 
-del_array_targets: comma_token.del_array_target+ comma_token? #local
+del_array_targets: comma_token.del_array_target+ comma_token?
 
 set_multiple_targets: targets=set_array_targets { ast.Tuple(token=targets[0][0].token, elts=targets[0], ctx=ast.Store(token=targets[0][0].token)) if len(targets[0]) != 1 or targets[1] else targets[0][0] }
 
@@ -882,7 +803,7 @@ expression_stmt: a=yield_expression { ast.Expr(token=a.token, value=a) }
 
 assignment_stmt: targets=(set_multiple_targets assign_token)+ value=yield_expression { ast.Assign(token=value.token, targets=[target[0] for target in targets], value=value) }
 
-augmented_assignment_stmt: target=set_single_target op=aug_token value=yield_expression { ast.AugAssign(token=value.token, target=target[0], op=self._bin_op_to_ast[op()[:-1]](token=op), value=value) }
+augmented_assignment_stmt: target=set_single_target op=aug_token value=yield_expression { ast.AugAssign(token=op, target=target[0], op=self._bin_op_to_ast[op()[:-1]](token=op), value=value) }
 
 annotated_assignment_stmt: target=set_single_target token=colon_token annotation=expression value=[assign_token yield_expression]  { ast.AnnAssign(token=token, target=target[0], annotation=annotation, value=value[1] if value else None, simple=target[1]) }
 
@@ -908,8 +829,13 @@ import_stmt:
     | token=import_token names=comma_token.(dot_token.identifier+ [as_token identifier])+ {
         ast.Import(
             token=token,
-            names=[ast.alias(token=token, name='.'.join([+c for c in name[0]]),
-            asname=+name[1][1] if name[1] else None) for name in names]
+            names=[
+                ast.alias(
+                    token=name[0][0],
+                    name='.'.join([+c for c in name[0]]),
+                    asname=+name[1][1] if name[1] else None
+                )
+            for name in names]
         )
     }
     | token=from_token module=module import_token names=comma_token.(identifier [as_token identifier])+ {

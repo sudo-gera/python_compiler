@@ -26,14 +26,19 @@ class make_true:
         return self.value
     def __repr__(self) -> str:
         return repr(self.value)
+    def __call__(self):
+        return self.value
 
 class token:
-    def __init__(self, s, coord, filename, pos, length):
+    def __init__(self, s, tokenizer, filename, pos, length):
         self.s = s
-        self.coord = coord
+        self.tokenizer = tokenizer
         self.filename = filename
         self.pos = pos
         self.length = length
+    @property
+    def coord(self):
+        return self.tokenizer.get_coordinates(self.pos)
     def __pos__(self):
         return self.s
     def __repr__(self):
@@ -50,29 +55,81 @@ class token:
             s=+s
         return token(
             s,
-            self.coord,
+            self.tokenizer,
             self.filename,
             self.pos,
             self.length,
         )
 
-re_cache={}
+class state:
+    def __init__(self, parser):
+        self.parser = parser
+    def append_str(self, s):
+        self.parser._str_level.append(s)
+        return True
+    def pop_str(self, s):
+        assert s == self.parser._str_level.pop()
+        return True
+    def str(self, s: str):
+        return all([
+            (c.lower() in self.parser._str_level[-1]) ^ (c.isupper())
+        for c in s])
+    def append_indent(self, s):
+        self = self.parser
+        self._indent_levels.append(None)
+        self._update_indent()
+        return True
+    def pop_indent(self, s):
+        self = self.parser
+        self._indent_levels.pop()
+        self._update_indent()
+        return True
+    def if_in_brackets(self, s):
+        return self.parser._bracket_level
+        
+def memoize(method):
+    """Memoize a symbol method."""
+    cache = {}
+
+    def memoize_wrapper(self):
+        key = self._mark(), self._indent_num
+        val = cache.get(key, None)
+        if val:
+            tree, endmark = val
+            self._reset(endmark)
+            return tree
+        else:
+            tree = method(self)
+            endmark = self._mark()
+            cache[key] = tree, endmark
+        return tree
+
+    return memoize_wrapper
+
+
+
+re_compiler = functools.cache(re.compile)
 class char_tokenizer:
-    def __init__(self, text, filename):
+    def __init__(self, text, filename, verbose):
         self.text = text
         self.filename = filename
         self.pos = 0
-        self.max_pos = 0
+        self.max_pos = -1
         self.index_of_prev_new_line = [-1]
+        if not verbose:
+            self.reset = functools.partial(self.__dict__.__setitem__, 'pos')
+            self.mark = functools.partial(self.__dict__.__getitem__, 'pos')
     def mark(self):
         return self.pos
     def reset(self, mark):
         self.pos = mark
         if self.pos > self.max_pos:
             self.max_pos = self.pos
-    def get_coordinates(self):
+    def get_coordinates(self, pos=None):
+        if pos is None:
+            pos = self.pos
         line_num = bisect.bisect_right(self.index_of_prev_new_line, self.pos)-1
-        pos_in_line = self.pos - self.index_of_prev_new_line[line_num]
+        pos_in_line = pos - self.index_of_prev_new_line[line_num]
         return line_num+1, pos_in_line
     def peek(self):
         buffer = self.text[self.pos:self.pos+64]
@@ -81,28 +138,20 @@ class char_tokenizer:
     def diagnose(self):
         return self.peek()
     def expect(self, reg: str):
-        tmp = re_cache.get(reg, None)
-        if tmp is None:
-            tmp = re.compile(reg, re.S)
-            re_cache[reg] = tmp
-        buffer = self.text
-        match = tmp.match(buffer, self.pos)
+        compiled_re = re_compiler(reg, re.S)
+        match = compiled_re.match(self.text, self.pos)
         if match is None:
             return None
         length = match.regs[0][1] - match.regs[0][0]
         res = self.text[self.pos:self.pos+length]
-        for q,w in enumerate(res):
-            if w=='\n':
-                if bisect.bisect_left(self.index_of_prev_new_line, self.pos + q)\
-                == bisect.bisect_right(self.index_of_prev_new_line, self.pos + q):
-                    self.index_of_prev_new_line.append(self.pos + q)
-                    # self.line_starts_set.add(self.pos + q)
-                    # assert self.line_starts_list == sorted(self.line_starts_list)
-        coord = self.get_coordinates()
+        for q in range(self.pos, self.pos+length):
+            if self.text[q]=='\n' and self.index_of_prev_new_line[-1] < q:
+                    self.index_of_prev_new_line.append(q)
         self.pos += length
-        return token(res, coord, self.filename, self.pos-length, length)
+        return token(res, self, self.filename, self.pos-length, length)
 
 indent_cache = {}
+
 
 class char_parser(python_parser.GeneratedParser):
     @property
@@ -116,10 +165,11 @@ class char_parser(python_parser.GeneratedParser):
         self._indent_levels = ['']
         self._caches = {}
         self._update_indent()
+        self._state = state(self)
+        self._str_level = []
         self._bracket_level = []
         self._func_level = [0]
         self._loop_level = [0]
-        self._ctx = ast.Load()
         self._functools = functools
         self._make_true = make_true
         self._token = token
@@ -151,18 +201,16 @@ class char_parser(python_parser.GeneratedParser):
             '-': ast.USub,
             '~': ast.Invert,
         }
-    # @pegen.parser.memoize
-    def expect(self, type: str):
-        return self._tokenizer.expect(type)
+    def expect(self, reg: str):
+        if '\0' in reg:
+            reg = reg.split('\0', 1)
+            return getattr(self._state, reg[0])(reg[1])
+        return self._tokenizer.expect(reg)
     def _unicode_lookup(self, query):
         try:
             return unicodedata.lookup(query)
         except KeyError:
             return None
-    def start_indent(self) -> Any | None:
-        return super().start_indent.__wrapped__(self)
-    def stop_indent(self) -> Any | None:
-        return super().stop_indent.__wrapped__(self)
     def _error(self):
         raise TabError
     def _update_indent(self):
@@ -199,18 +247,24 @@ class char_parser(python_parser.GeneratedParser):
         else:
             return ast.JoinedStr(token=tokens[0].token, values=values2)
 
-
-
-
 def create_ast(text, filename, verbose=0):
-    tokenizer = char_tokenizer(text, filename)
-    parser = char_parser(tokenizer, verbose=verbose)
-    try:
-        tree = parser.start()
-    except TabError:
-        tree = None
-
-    if not tree:
+    for v in range(verbose, 2):
+        tokenizer = char_tokenizer(text, filename, v)
+        parser = char_parser(tokenizer, verbose=verbose)
+        if not verbose:
+            for name in dir(parser):
+                value = parser.__getattribute__(name)
+                if callable(value) and hasattr(value, '__wrapped__') and callable(value.__wrapped__):
+                    assert 'memoize_left_rec' not in repr(value)
+                    wrapper = functools.partial(memoize(value.__wrapped__), parser)
+                    setattr(parser, name, wrapper)
+        try:
+            tree = parser.start()
+        except TabError:
+            tree = None
+        if tree:
+            break
+    else:
         tokenizer.reset(tokenizer.max_pos)
         coord = tokenizer.get_coordinates()
         raise SyntaxError('invalid syntax', (
