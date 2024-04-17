@@ -2,45 +2,40 @@ import ast
 import sys
 import io
 
-level = 0
-
 class indent_writer:
-    def __init__(self, indent, file):
+    def __init__(self, indent, file, level):
         self.indent = indent
         self.file = file
         self.is_first = [1]
+        self.level = level
     def __call__(self):
         if self.is_first and self.is_first.pop():
-            self.file.write('' if self.indent is None else '\n' + self.indent * level)
+            self.file.write('' if self.indent is None else '\n' + self.indent * self.level)
         else:
-            self.file.write(', ' if self.indent is None else ',\n' + self.indent * level)
+            self.file.write(', ' if self.indent is None else ',\n' + self.indent * self.level)
 
-def print_ast(root: ast.AST, indent=None, file=sys.stdout):
-    global level
+def print_ast(root: ast.AST, indent=None, file=sys.stdout, level=-1):
     level += 1
-    try:
-        if isinstance(indent, int):
-            indent *= ' '
-        if isinstance(root, ast.AST):
-            file.write(f'{type(root).__name__}(')
-            fields = [f for f in root._fields if getattr(root, f) is not None or getattr(type(root), f, ...) is not None]
-            ind = indent_writer(indent, file)
-            for f in fields:
-                ind()
-                file.write(f'{f}=')
-                print_ast(getattr(root, f), indent, file)
-            file.write(')')
-        elif isinstance(root, list):
-            file.write('[')
-            ind = indent_writer(indent, file)
-            for q in root:
-                ind()
-                print_ast(q, indent, file)
-            file.write(']')
-        else:
-            file.write(repr(root))
-    finally:
-        level -= 1
+    if isinstance(indent, int):
+        indent *= ' '
+    if isinstance(root, ast.AST):
+        file.write(f'{type(root).__name__}(')
+        fields = [f for f in root._fields if getattr(root, f) is not None or getattr(type(root), f, ...) is not None]
+        ind = indent_writer(indent, file, level)
+        for f in fields:
+            ind()
+            file.write(f'{f}=')
+            print_ast(getattr(root, f), indent, file, level)
+        file.write(')')
+    elif isinstance(root, list):
+        file.write('[')
+        ind = indent_writer(indent, file, level)
+        for q in root:
+            ind()
+            print_ast(q, indent, file, level)
+        file.write(']')
+    else:
+        file.write(repr(root))
 
 def dump_ast(root: ast.AST, indent=None):
     file = io.StringIO()

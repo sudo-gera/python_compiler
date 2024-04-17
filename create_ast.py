@@ -60,6 +60,13 @@ class token:
             self.pos,
             self.length,
         )
+    def error(self, msg):
+        raise SyntaxError(msg, (
+            os.path.realpath(self.filename),
+            *self.coord,
+            (self.tokenizer.text[self.tokenizer.index_of_prev_new_line[self.coord[0]-1]+1:]+'\n').split('\n',1)[0]
+        ))
+
 
 class state:
     def __init__(self, parser):
@@ -116,7 +123,7 @@ class char_tokenizer:
         self.pos = 0
         self.max_pos = -1
         self.index_of_prev_new_line = [-1]
-        if not verbose:
+        if not verbose: # works faster but no max_pos
             self.reset = functools.partial(self.__dict__.__setitem__, 'pos')
             self.mark = functools.partial(self.__dict__.__getitem__, 'pos')
     def mark(self):
@@ -128,7 +135,7 @@ class char_tokenizer:
     def get_coordinates(self, pos=None):
         if pos is None:
             pos = self.pos
-        line_num = bisect.bisect_right(self.index_of_prev_new_line, self.pos)-1
+        line_num = bisect.bisect_right(self.index_of_prev_new_line, pos)-1
         pos_in_line = pos - self.index_of_prev_new_line[line_num]
         return line_num+1, pos_in_line
     def peek(self):
@@ -266,12 +273,7 @@ def create_ast(text, filename, verbose=0):
             break
     else:
         tokenizer.reset(tokenizer.max_pos)
-        coord = tokenizer.get_coordinates()
-        raise SyntaxError('invalid syntax', (
-            os.path.realpath(filename),
-            *coord,
-            (text[tokenizer.index_of_prev_new_line[coord[0]-1]+1:]+'\n').split('\n',1)[0]
-        ))
+        tokenizer.expect('').error('invalid syntax')
     return tree
 
 def ast_equal(ast1, ast2):
