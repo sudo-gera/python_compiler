@@ -1,0 +1,6 @@
+[submodule "tests/Python"]
+	path = tests/Python
+	url = https://github.com/TheAlgorithms/Python.git
+[submodule "tests/proxy.py"]
+	path = tests/proxy.py
+	url = https://github.com/abhinavsingh/proxy.py.git
