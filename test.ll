@@ -1,54 +1,23 @@
 ; ModuleID = ""
-target triple = "unknown-unknown-unknown"
+target triple = ""
 target datalayout = ""
 
-define void @"mul"(i65536* %".1", i65536* %".2")
+declare i8* @"calloc"(i64 %".1", i64 %".2")
+
+declare i32 @"getchar"()
+
+declare i32 @"putchar"(i32 %".1")
+
+declare i32 @"puts"(i8* %".1")
+
+declare i32 @"stop_module"()
+
+declare void @"start_module"(i32 %".1", i8** %".2")
+
+define i32 @"main"(i32 %".1", i8** %".2")
 {
 .4:
-  %".5" = load i65536, i65536* %".1"
-  %".6" = load i65536, i65536* %".2"
-  %".7" = mul i65536 %".5", %".6"
-  store i65536 %".7", i65536* %".1"
-  ret void
+  call void @"start_module"(i32 %".1", i8** %".2")
+  %".6" = call i32 @"stop_module"()
+  ret i32 %".6"
 }
-
-define void @"sub"(i65536* %".1", i65536* %".2")
-{
-.4:
-  %".5" = load i65536, i65536* %".1"
-  %".6" = load i65536, i65536* %".2"
-  %".7" = sub i65536 %".5", %".6"
-  store i65536 %".7", i65536* %".1"
-  ret void
-}
-
-define void @"add"(i65536* %".1", i65536* %".2")
-{
-.4:
-  %".5" = load i65536, i65536* %".1"
-  %".6" = load i65536, i65536* %".2"
-  %".7" = add i65536 %".5", %".6"
-  store i65536 %".7", i65536* %".1"
-  ret void
-}
-
-define void @"sdiv"(i65536* %".1", i65536* %".2")
-{
-.4:
-  %".5" = load i65536, i65536* %".1"
-  %".6" = load i65536, i65536* %".2"
-  %".7" = sdiv i65536 %".5", %".6"
-  store i65536 %".7", i65536* %".1"
-  ret void
-}
-
-define void @"srem"(i65536* %".1", i65536* %".2")
-{
-.4:
-  %".5" = load i65536, i65536* %".1"
-  %".6" = load i65536, i65536* %".2"
-  %".7" = srem i65536 %".5", %".6"
-  store i65536 %".7", i65536* %".1"
-  ret void
-}
-

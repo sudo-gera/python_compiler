@@ -17,7 +17,6 @@ import argparse
 
 import python_parser
 
-sys.setrecursionlimit(2**30)
 
 class make_true:
     def __init__(self, value):
@@ -255,26 +254,32 @@ class char_parser(python_parser.GeneratedParser):
             return ast.JoinedStr(token=tokens[0].token, values=values2)
 
 def create_ast(text, filename, verbose=0):
-    for v in range(verbose, 2):
-        tokenizer = char_tokenizer(text, filename, v)
-        parser = char_parser(tokenizer, verbose=verbose)
-        if not verbose:
-            for name in dir(parser):
-                value = parser.__getattribute__(name)
-                if callable(value) and hasattr(value, '__wrapped__') and callable(value.__wrapped__):
-                    assert 'memoize_left_rec' not in repr(value)
-                    wrapper = functools.partial(memoize(value.__wrapped__), parser)
-                    setattr(parser, name, wrapper)
-        try:
-            tree = parser.start()
-        except TabError:
-            tree = None
-        if tree:
-            break
-    else:
-        tokenizer.reset(tokenizer.max_pos)
-        tokenizer.expect('').error('invalid syntax')
-    return tree
+    rec_lim = sys.getrecursionlimit()
+    sys.setrecursionlimit(2**30)
+    try:
+        for v in range(verbose, 2):
+            tokenizer = char_tokenizer(text, filename, v)
+            parser = char_parser(tokenizer, verbose=verbose)
+            if not verbose:
+                for name in dir(parser):
+                    value = parser.__getattribute__(name)
+                    if callable(value) and hasattr(value, '__wrapped__') and callable(value.__wrapped__):
+                        assert 'memoize_left_rec' not in repr(value)
+                        wrapper = functools.partial(memoize(value.__wrapped__), parser)
+                        setattr(parser, name, wrapper)
+            try:
+                tree = parser.start()
+            except TabError:
+                tree = None
+            if tree:
+                break
+        else:
+            tokenizer.reset(tokenizer.max_pos)
+            tokenizer.expect('').error('invalid syntax')
+        return tree
+    finally:
+        sys.setrecursionlimit(rec_lim)
+
 
 def ast_equal(ast1, ast2):
     return (

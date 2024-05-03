@@ -57,13 +57,13 @@ def merge(d1: dd[str, int], d2: dd[str, int]) -> dd[str, int]:
 
 # stack = []
 
-def get_neg_closure(root: ast.AST|list) -> closure_info:
-    return sum(get_closure_list(root), closure_info())
+def external_closure(root: ast.AST|list) -> closure_info:
+    return sum(external_closure_list(root), closure_info())
 
-def get_closure_list(root: ast.AST|list) -> typing.Iterable[closure_info]:
+def external_closure_list(root: ast.AST|list) -> typing.Iterable[closure_info]:
     match root:
         case [*nodes]:
-            return map(get_neg_closure, nodes)
+            return map(external_closure, nodes)
         case int() | bool() | str() | None:
             return []
 
@@ -81,30 +81,30 @@ def get_closure_list(root: ast.AST|list) -> typing.Iterable[closure_info]:
                     args.kwonlyargs +
                     ([] if args.kwarg is None else [args.kwarg])
                 )}) +
-                get_neg_closure(body)
-            ) + get_neg_closure(args.defaults) + get_neg_closure(args.kw_defaults)
+                external_closure(body)
+            ) + external_closure(args.defaults) + external_closure(args.kw_defaults)
             match root:
                 case ast.AsyncFunctionDef(name, args, body, decorator_list, returns) |\
                         ast.FunctionDef(name, args, body, decorator_list, returns):
                     res += closure_info({name: mode_local_owned})
-                    res += get_neg_closure(decorator_list)
-                    res += get_neg_closure(returns)
+                    res += external_closure(decorator_list)
+                    res += external_closure(returns)
             return [res]
 
         case ast.ClassDef(name, bases, keywords, body, decorator_list):
             assert False
-            return map(get_neg_closure, [name, bases, keywords, body, decorator_list])
+            return map(external_closure, [name, bases, keywords, body, decorator_list])
         case ast.DictComp(key, value, generators):
             assert False
-            return map(get_neg_closure, [key, value, generators])
+            return map(external_closure, [key, value, generators])
         case ast.SetComp(elt, generators) |\
                 ast.ListComp(elt, generators) |\
                 ast.GeneratorExp(elt, generators):
             assert False
-            return map(get_neg_closure, [elt, generators])
+            return map(external_closure, [elt, generators])
         case ast.ExceptHandler(type, name, body):
             assert False
-            return map(get_neg_closure, [type, name, body])
+            return map(external_closure, [type, name, body])
 
         case ast.Import(names):
             return [closure_info({name.name if name.asname is None else name.asname: mode_local_owned for name in names})]
@@ -131,14 +131,14 @@ def get_closure_list(root: ast.AST|list) -> typing.Iterable[closure_info]:
         #     return map(get_neg_closure, [name])
 
         case ast.AST():
-            return [get_neg_closure(getattr(root, f)) for f in root._fields]
+            return [external_closure(getattr(root, f)) for f in root._fields]
         case _:
             assert isinstance(root, ast.AST)
             print(ast.dump(root, indent=4))
             assert False
 
-def get_closure(root: ast.AST) -> closure_info:
-    cl = get_neg_closure(root).subfuncs[0]
+def internal_closure(root: ast.AST) -> closure_info:
+    cl = external_closure(root).subfuncs[0]
     if isinstance(root, ast.Module):
         a = [cl]
         for c in a:
@@ -148,4 +148,9 @@ def get_closure(root: ast.AST) -> closure_info:
                     cl.vars[name] |= 1
     return cl
 
-            
+def internal_closure(root: ast.AST) -> closure_info:
+    cl = external_closure(root).subfuncs[0]
+    for name, mode in cl.vars.items():
+        if mode ^ mode_global_ > 1:
+            cl.vars[name] = mode_undefined_owned
+    return cl
