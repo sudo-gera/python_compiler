@@ -24,12 +24,14 @@ class GeneratedParser(Parser):
 
     @memoize
     def spaces(self) -> Optional[Any]:
-        # spaces: spaces_in_brackets | spaces_not_in_brackets
+        # spaces: 'if_in_brackets\0' spaces_in_brackets | spaces_not_in_brackets
         mark = self._mark()
         if (
-            (spaces_in_brackets := self.spaces_in_brackets())
+            (self.expect('if_in_brackets\0'))
+            and
+            (a := self.spaces_in_brackets())
         ):
-            return spaces_in_brackets;
+            return a;
         self._reset(mark)
         if (
             (spaces_not_in_brackets := self.spaces_not_in_brackets())
@@ -45,7 +47,7 @@ class GeneratedParser(Parser):
         if (
             (tokens := self._gather_1())
         ):
-            return tokens [0] if self . _bracket_level else None;
+            return tokens [0];
         self._reset(mark)
         return None;
 
