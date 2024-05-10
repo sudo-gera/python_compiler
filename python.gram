@@ -3,7 +3,7 @@
 new_line: token=r'(#[^\n]*)?(\n|$)' { token }
 
 spaces:
-    | 'if_in_brackets\0' spaces_in_brackets
+    | 'if_in_brackets\0' a=spaces_in_brackets { a }
     | spaces_not_in_brackets
 
 spaces_in_brackets: tokens=(!r'$' new_line).spaces_not_in_brackets+ { tokens[0] }
