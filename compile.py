@@ -10,7 +10,7 @@ import sys
 
 import closure
 
-default_int = ir.IntType(640000)
+default_int = ir.IntType(64)
 
 def cast(builder: ir.IRBuilder, val, t=None):
     if t is None:
@@ -26,13 +26,20 @@ def cast(builder: ir.IRBuilder, val, t=None):
         return val
     if isinstance(val.type, ir.PointerType) and isinstance(t, ir.PointerType):
         return builder.bitcast(val, t)
+    if isinstance(val.type, ir.DoubleType) and isinstance(t, ir.IntType):
+        return cast(builder, builder.call(external_functions['double_to_int64'], [val]), t)
+    if isinstance(val.type, ir.IntType) and isinstance(t, ir.DoubleType):
+        return builder.call(external_functions['int64_to_double'], [cast(builder, val, ir.IntType(64))])
+    if isinstance(val.type, ir.DoubleType) and isinstance(t, ir.DoubleType):
+        return val
+    print(val.type, t)
     assert False
 
 m = ir.Module()
 m.triple = ''
 source_functions : list[tuple[ir.Function, ir.IRBuilder]] = []
 external_functions : dict[str, ir.Function] = {}
-functions = []
+functions : dict[ast.AST, dict] = {}
 type_sizes = {}
 types = [
     dict(name='type'),
@@ -59,37 +66,11 @@ def constant(val, name=None):
         return gvar
     assert False
 
-def increment_shared_link(builder: ir.IRBuilder, ptr):
-    ptr_i64 = builder.bitcast(
-        ptr,
-        ir.intType(64).as_pointer()
-    )
-    builder.store(
-        builder.add(
-            builder.load(ptr_i64),
-            ir.IntType(64)(1)
-        ),
-        ptr_i64
-    )
-
-def decrement_shared_link(builder: ir.IRBuilder, ptr):
-    ptr_i64 = builder.bitcast(
-        ptr,
-        ir.intType(64).as_pointer()
-    )
-    builder.store(
-        builder.sub(
-            builder.load(ptr_i64),
-            ir.IntType(64)(1)
-        ),
-        ptr_i64
-    )
-
 def setattr(builder: ir.IRBuilder, self, name, val):
     name = constant(name)
     builder.call(external_functions['setAttrOfPyObject'], [self, name, name.value_type.count, val])
 
-def compile(node: ast.AST|list):
+def compile(node: ast.AST|list, value_for_storing = None):
     match node:
         case ast.Module(body):
             assert subprocess.run(['clang++', '-std=c++20', pathlib.Path(__file__).with_name('platform.cpp')]).returncode == 0
@@ -98,80 +79,120 @@ def compile(node: ast.AST|list):
                 m,
                 ir.FunctionType(
                     ir.IntType(32),
-                    [ir.IntType(32)]
+                    [ir.IntType(32), ir.IntType(8).as_pointer().as_pointer()]
                 ),
                 name="main"
             )
             builder = ir.IRBuilder(func.append_basic_block())
-            global builtins_
-            global globals_
-            builtins_ = builder.call(external_functions['createPyObject'])
-            globals_ = builder.call(external_functions['createPyObject'])
-            type_ = builder.call(external_functions['createPyObject'])
-            setattr(builder, type_, '__class__', type_)
-            setattr(builder, builtins_, 'type', type_)
-            int_ = builder.call(external_functions['createPyObject'])
-            setattr(builder, int_, '__class__', type_)
-            setattr(builder, builtins_, 'int', int_)
-
-            
-            
-
-
-            # TODO: builtins, type, ...
+            # global globals_
+            # global builtins_
+            # builtins_ = builder.call(external_functions['createPyObject'])
+            # globals_ = builder.call(external_functions['createPyObject'])
+            # type_ = builder.call(external_functions['createPyObject'])
+            # setattr(builder, type_, '__class__', type_)
+            # setattr(builder, builtins_, 'type', type_)
+            # int_ = builder.call(external_functions['createPyObject'])
+            # setattr(builder, int_, '__class__', type_)
+            # setattr(builder, builtins_, 'int', int_)
             cl = closure.internal_closure(node)
+            # functions.setdefault(node, {})
+            # functions[node].setdefault('closure', cl)
+            # functions[node].setdefault('type_mappings', [])
+            # functions[node]['type_mappings'].append([{name: None for name in cl.vars}, {}])
+            # current_type_map_index = 0
+            # while current_type_map_index < functions[node]['type_mappings']:
+            #     current_type_map = functions[node]['type_mappings'][current_type_map_index]
+            #     current_type_map_index += 1
+            # # TODO: builtins, type, ...
             frame = {}
             for name, mode in cl.vars.items():
-                frame[name] = builder.call(external_functions['createPyObject'], [])
-                # increment_shared_link(frame[name])
-            source_functions.append((func, builder, frame))
+                # if mode & 1:
+                    # frame[name] = builder.call(external_functions['create_py_object'], [])
+                # else:
+                #     frame[name] = builder.alloca(ir.DoubleType())
+                frame[name] = builder.call(external_functions['create_py_object'], [])
+            source_functions.append(dict(func=func, builder=builder, frame=frame, types={}))
             compile(body)
+            # for name, mode in cl.vars.items():
+            #     if mode & 1:
+            #         frame[name] = builder.call(external_functions['create_py_object'], [])
+            #     else:
+            #         frame[name] = builder.alloca(ir.DoubleType())
             builder.ret(ir.IntType(32)(0))
             return str(m)
         case ast.Name(id, ctx):
+            builder: ir.IRBuilder
+            builder = source_functions[-1]['builder']
+            types = source_functions[-1]['types']
+            frame = source_functions[-1]['frame']
             if isinstance(ctx, ast.Load):
-                builder = source_functions[-1][1]
-                frame = source_functions[-1][2]
-                return builder.load(frame[id])
-            assert False
+                if id not in types:
+                    node.token.error(f'unknown variable {id:r}')
+                return builder.load(cast(builder, frame[id], types[id].as_pointer()))
+            if isinstance(ctx, ast.Store):
+                if id not in types:
+                    types[id] = value_for_storing.type
+                builder.store(cast(builder, value_for_storing, types[id]), cast(builder, frame[id], types[id].as_pointer()), 8)
+            if isinstance(ctx, ast.Del):
+                assert False
+                # if source_functions[-1]['types'].get('id', value.type) != value.type:
+                #     node.token.error(f'cannot assign')
         case ast.Assign(targets, value):
-            map(compile(targets), value)
-
-            
+            value_for_storing = compile(value)
+            targets = compile(targets, value_for_storing)
         case list():
-            return [*map(compile, node)]
+            return [*map(lambda a: compile(a, value_for_storing), node)]
         case ast.Expr(value):
             compile(value)
         case ast.Constant(value):
             if isinstance(value, int):
-                return {
-                    int: default_int
-                }[type(value)](value)
+                return default_int(value)
+            if isinstance(value, float):
+                return ir.DoubleType()(value)
             if isinstance(value, str):
                 value = value.encode()
             if isinstance(value, bytes|bytearray):
                 return constant(value)
             assert False
         case ast.BinOp(left, op, right):
-            builder = source_functions[-1][1]
+            builder = source_functions[-1]['builder']
+            left = compile(left)
+            right = compile(right)
+            if isinstance(left.type, ir.DoubleType) or isinstance(right.type, ir.DoubleType) or isinstance(op, ast.Div):
+                left = cast(builder, left, ir.DoubleType())
+                right = cast(builder, right, ir.DoubleType())
+                if isinstance(op, ast.Mod):
+                    return builder.frem(builder.fadd(builder.frem(left, right), right), right)
+                if isinstance(op, ast.FloorDiv):
+                    return builder.fdiv(builder.fsub(left, builder.frem(builder.fadd(builder.frem(left, right), right), right)), right)
+                return {
+                    ast.Add: builder.fadd,
+                    ast.Sub: builder.fsub,
+                    ast.Mult: builder.fmul,
+                    ast.Div: builder.fdiv,
+                }[type(op)](left, right)
+            if isinstance(op, ast.Mod):
+                return builder.srem(builder.add(builder.srem(left, right), right), right)
+            if isinstance(op, ast.FloorDiv):
+                return builder.sdiv(builder.sub(left, builder.srem(builder.add(builder.srem(left, right), right), right)), right)
             return {
                 ast.Add: builder.add,
                 ast.Sub: builder.sub,
                 ast.Mult: builder.mul,
-            }[type(op)](compile(left), compile(right))
+            }[type(op)](left, right)
         case ast.Call(func, args, keywords):
-            if isinstance(func, ast.Name) and func.id in external_functions:
-                assert not keywords
-                builder = source_functions[-1][1]
-                func = external_functions[func.id]
-                ft : ir.FunctionType = func.ftype
-                return cast(builder, builder.call(
-                    func,
-                    [cast(builder, arg, t) for arg, t in zip(compile(args), ft.args)]
-                ))
-            else:
-                print(ast.dump(node, indent=4))
-                assert False
+            match func:
+                case ast.Attribute(ast.Tuple([]), attr):
+                    if attr in external_functions:
+                        builder = source_functions[-1]['builder']
+                        func = external_functions[attr]
+                        ft : ir.FunctionType = func.ftype
+                        return cast(builder, builder.call(
+                            func,
+                            [cast(builder, arg, t) for arg, t in zip(compile(args), ft.args)]
+                        ))
+            print(ast.dump(node, indent=4))
+            assert False
         case ast.FunctionDef(name, args, body, decorator_list, returns):
             assert not decorator_list
             match args:

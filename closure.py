@@ -64,7 +64,7 @@ def external_closure_list(root: ast.AST|list) -> typing.Iterable[closure_info]:
     match root:
         case [*nodes]:
             return map(external_closure, nodes)
-        case int() | bool() | str() | None:
+        case float() | int() | bool() | str() | None:
             return []
 
         case ast.Lambda(args, body) |\

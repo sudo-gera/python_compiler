@@ -20,6 +20,13 @@ auto print_type()->enable_if_t<numeric_limits<T>::is_integer, string>{
 }
 
 template<typename T>
+auto print_type()->enable_if_t<is_same_v<decay_t<T>, double>, string>{
+    stringstream ss;
+    ss << "ir.DoubleType()";
+    return ss.str();
+}
+
+template<typename T>
 auto print_type()->enable_if_t<is_void_v<T>, string>{
     stringstream ss;
     ss << "ir.VoidType()";
@@ -27,7 +34,7 @@ auto print_type()->enable_if_t<is_void_v<T>, string>{
 }
 
 template<typename T>
-auto print_type()->enable_if_t<not is_pointer_v<T> and not is_integral_v<T> and not is_void_v<T>, string>{
+auto print_type()->enable_if_t<not is_pointer_v<T> and not is_integral_v<T> and not is_void_v<T> and not is_same_v<decay_t<T>, double>, string>{
     cout << "type_sizes['" << strtype<T>() << "'] = " << sizeof(T) << endl;
     stringstream ss;
     ss << "ir.IntType(8)";
@@ -97,7 +104,7 @@ struct func_printer<__COUNTER__>{
     void operator()(){}
 };
 
-#define print_func(f) cout << "external_functions['"#f"'] = " + print_func(f, #f) + "\n";
+#define print_func(f) cout << "external_functions['"#f"'] = " + print_func(function(f), #f) + "\n";
 #define printer(func)\
 template<>\
 struct func_printer<__COUNTER__>{\
