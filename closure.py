@@ -7,6 +7,7 @@ import io
 import functools
 import typing
 from collections import defaultdict as dd
+from icecream import ic
 
 mode_undefined_owned   = 0b00000
 mode_external_owned    = 0b00010
@@ -148,9 +149,12 @@ def internal_closure(root: ast.AST) -> closure_info:
                     cl.vars[name] |= 1
     return cl
 
-def internal_closure(root: ast.AST) -> closure_info:
-    cl = external_closure(root).subfuncs[0]
-    for name, mode in cl.vars.items():
-        if mode ^ mode_global_ > 1:
-            cl.vars[name] = mode_undefined_owned
-    return cl
+# def internal_closure(root: ast.AST) -> closure_info:
+#     cl = external_closure(root)
+#     ic(cl.vars, cl.subfuncs, cl.subfuncs[0].vars)
+#     cl = external_closure(root).subfuncs[0]
+#     ic(cl.vars, cl.subfuncs)
+#     for name, mode in cl.vars.items():
+#         if mode ^ mode_global_ > 1:
+#             cl.vars[name] = mode_undefined_owned
+#     return cl

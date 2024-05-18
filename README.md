@@ -29,6 +29,11 @@
     ```
 5. Happy coding!
 
+### compile and run code
+```
+python3 compile.py test.py
+```
+
 ### generate parser from the grammar:
 1. run this command:
     ```

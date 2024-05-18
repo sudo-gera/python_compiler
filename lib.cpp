@@ -162,17 +162,17 @@ using namespace std;
 #define printer(...)
 #endif
 
-extern "C"
-int64_t double_to_int64(double val){
-    return val;
-}
-printer(double_to_int64);
+// extern "C"
+// int64_t double_to_int64(double val){
+//     return val;
+// }
+// printer(double_to_int64);
 
-extern "C"
-double int64_to_double(int64_t val){
-    return val;
-}
-printer(int64_to_double);
+// extern "C"
+// double int64_to_double(int64_t val){
+//     return val;
+// }
+// printer(int64_to_double);
 
 union unknown_value{
     int64_t ival;
@@ -196,3 +196,45 @@ printer(create_py_object);
 extern "C"
 void get_static_size_of_unknown_value(unknown_value*a){}
 printer(get_static_size_of_unknown_value);
+
+struct py_function{
+    size_t code = 0;
+    vector<unknown_value*> closure;
+};
+
+extern "C"
+py_function* create_py_function(size_t code){
+    return new py_function{code};
+}
+printer(create_py_function);
+
+extern "C"
+void add_cell_to_function(py_function* func, unknown_value* val){
+    func->closure.push_back(val);
+    // cout << func << " " << func->closure.size() << endl;
+}
+printer(add_cell_to_function);
+
+extern "C"
+size_t get_code_from_function(py_function* func){
+    return func->code;
+}
+printer(get_code_from_function);
+
+extern "C"
+unknown_value* get_cell_from_function(py_function* func, size_t index){
+    // cout << func << " " << func->closure.size() << " " << index << endl;
+    return func->closure[index];
+}
+printer(get_cell_from_function);
+
+extern "C"
+void print_int(int64_t val){
+    cout << val << endl;
+}
+printer(print_int);
+
+
+
+
+
