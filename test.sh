@@ -10,6 +10,9 @@ cd "$(
 coverage run --include=create_ast.py,python_parser.py -m pytest test_all.py
 coverage html
 coverage report
-python3 -m pegen python.gram -qo python_parser_new.py
-diff python_parser_new.py python_parser.py
-rm python_parser_new.py
+if python3 -m pegen --help
+then
+    python3 -m pegen python.gram -qo python_parser_new.py
+    diff python_parser_new.py python_parser.py
+    rm python_parser_new.py
+fi
