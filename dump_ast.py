@@ -25,10 +25,8 @@ class indent_writer:
                 ',\n' + self.indent * self.level
             )
 
-def print_ast(root: ast.AST, indent: str | int | None = None, file: typing.IO[str] = sys.stdout, level: int = -1) -> None:
+def print_ast(root: ast.AST, indent: str | None = None, file: typing.IO[str] = sys.stdout, level: int = 0) -> None:
     level += 1
-    if isinstance(indent, int):
-        indent *= ' '
     if isinstance(root, ast.AST):
         file.write(f'{type(root).__name__}(')
         fields = [f for f in root._fields if getattr(root, f) is not None or getattr(type(root), f, ...) is not None]
@@ -49,6 +47,8 @@ def print_ast(root: ast.AST, indent: str | int | None = None, file: typing.IO[st
         file.write(repr(root))
 
 def dump_ast(root: ast.AST, indent: str | int | None = None) -> str:
+    if isinstance(indent, int):
+        indent *= ' '
     file = io.StringIO()
     print_ast(root, indent, file)
     return file.getvalue()    

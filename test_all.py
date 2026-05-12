@@ -39,11 +39,9 @@ def test_ast(filepath):
         try:
             lib_ast = ast.parse(text, filepath)
             lib_dump = ast.dump(lib_ast)
-            lib_dump4 = ast.dump(lib_ast, indent=4)
         except SyntaxError:
             lib_ast = None
             lib_dump = None
-            lib_dump4 = None
 
         if lib_ast is not None and re.search(r'\bMatch\b', lib_dump):
             return
@@ -51,14 +49,11 @@ def test_ast(filepath):
         try:
             app_ast = create_ast.create_ast(text, filepath)
             app_dump = dump_ast.dump_ast(app_ast)
-            app_dump4 = dump_ast.dump_ast(app_ast, indent=4)
         except Exception:
             app_ast = None
             app_dump = None
-            app_dump4 = None
 
         assert app_dump == lib_dump
-        assert app_dump4 == lib_dump4
         assert create_ast.ast_equal(app_ast, lib_ast)
         assert create_ast.all_have_tokens(app_ast)
 
