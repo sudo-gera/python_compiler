@@ -16,7 +16,21 @@ def walk(path: str):
                 yield os.path.join(dirpath, name)
 
 
-files = dict([*zip(walk(os.path.dirname(os.path.realpath(__file__))), map(dict, itertools.repeat({})))][:])
+files = dict(
+    [
+        *zip(
+            walk(
+                os.path.dirname(
+                    os.path.realpath(__file__)
+                )
+            ),
+            map(
+                dict,
+                itertools.repeat({})
+            )
+        )
+    ][:]
+)
 
 @pytest.mark.parametrize('filepath', files)
 def test_ast(filepath):
