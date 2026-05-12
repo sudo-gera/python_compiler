@@ -23,7 +23,7 @@ from pegen.tokenizer import Tokenizer
 make_true_t = typing.TypeVar('make_true_t')
 
 class make_true(typing.Generic[make_true_t]):
-    def __init__(self, value: make_true_t):
+    def __init__(self, value: make_true_t) -> Any:
         self.value = value
     def __pos__(self) -> make_true_t:
         return self.value
@@ -33,25 +33,25 @@ class make_true(typing.Generic[make_true_t]):
         return self.value
 
 class token:
-    def __init__(self, s, tokenizer, filename, pos, length):
+    def __init__(self, s, tokenizer, filename, pos, length) -> None:
         self.s = s
         self.tokenizer = tokenizer
         self.filename = filename
         self.pos = pos
         self.length = length
     @property
-    def coord(self):
+    def coord(self) -> Any:
         return self.tokenizer.get_coordinates(self.pos)
-    def __pos__(self):
+    def __pos__(self) -> Any:
         return self.s
-    def __repr__(self):
+    def __repr__(self) -> Any:
         # return f'\x1b[32m{self.s!r} at {self.filename}:{self.coord[0]}:{self.coord[1]}\x1b[0m'
         return f'{self.s!r} at {self.filename}:{self.coord[0]}:{self.coord[1]}'
         # return f'{self.s!r}'
-    def __add__(self, t):
+    def __add__(self, t) -> Any:
         assert isinstance(t, token)
         return self(self.s + +t)
-    def __call__(self, s=None):
+    def __call__(self, s=None) -> Any:
         if s is None:
             return +self
         if isinstance(s, token):
@@ -63,7 +63,7 @@ class token:
             self.pos,
             self.length,
         )
-    def error(self, msg):
+    def error(self, msg) -> Any:
         raise SyntaxError(msg, (
             os.path.realpath(self.filename),
             *self.coord,
@@ -72,36 +72,36 @@ class token:
 
 
 class state:
-    def __init__(self, parser):
+    def __init__(self, parser) -> Any:
         self.parser = parser
-    def append_str(self, s):
+    def append_str(self, s) -> Any:
         self.parser._str_level.append(s)
         return True
-    def pop_str(self, s):
+    def pop_str(self, s) -> Any:
         assert s == self.parser._str_level.pop()
         return True
-    def str(self, s: str):
+    def str(self, s: str) -> Any:
         return all([
             (c.lower() in self.parser._str_level[-1]) ^ (c.isupper())
         for c in s])
-    def append_indent(self, s):
+    def append_indent(self, s) -> Any:
         self = self.parser
         self._indent_levels.append(None)
         self._update_indent()
         return True
-    def pop_indent(self, s):
+    def pop_indent(self, s) -> Any:
         self = self.parser
         self._indent_levels.pop()
         self._update_indent()
         return True
-    def if_in_brackets(self, s):
+    def if_in_brackets(self, s) -> Any:
         return self.parser._bracket_level
         
-def memoize(method):
+def memoize(method) -> Any:
     """Memoize a symbol method."""
     cache = {}
 
-    def memoize_wrapper(self):
+    def memoize_wrapper(self) -> Any:
         key = self._mark(), self._indent_num
         val = cache.get(key, None)
         if val:
@@ -120,7 +120,7 @@ def memoize(method):
 
 re_compiler = functools.cache(re.compile)
 class char_tokenizer(Tokenizer):
-    def __init__(self, text: str, filename: str, verbose: bool):
+    def __init__(self, text: str, filename: str, verbose: bool) -> None:
         self.text = text
         self.filename = filename
         self.pos = 0
@@ -129,25 +129,25 @@ class char_tokenizer(Tokenizer):
         if not verbose: # works faster but no max_pos
             self.reset = functools.partial(self.__dict__.__setitem__, 'pos')
             self.mark = functools.partial(self.__dict__.__getitem__, 'pos')
-    def mark(self):
+    def mark(self) -> Any:
         return self.pos
-    def reset(self, mark):
+    def reset(self, mark) -> Any:
         self.pos = mark
         if self.pos > self.max_pos:
             self.max_pos = self.pos
-    def get_coordinates(self, pos=None):
+    def get_coordinates(self, pos=None) -> Any:
         if pos is None:
             pos = self.pos
         line_num = bisect.bisect_right(self.index_of_prev_new_line, pos)-1
         pos_in_line = pos - self.index_of_prev_new_line[line_num]
         return line_num+1, pos_in_line
-    def peek(self):
+    def peek(self) -> Any:
         buffer = self.text[self.pos:self.pos+64]
         line_num, pos_in_line = self.get_coordinates()
         return tokenize.TokenInfo(token_module.OP, buffer, (line_num, pos_in_line), (line_num, pos_in_line+64), repr(buffer))
-    def diagnose(self):
+    def diagnose(self) -> Any:
         return self.peek()
-    def expect(self, reg: str):
+    def expect(self, reg: str) -> Any:
         compiled_re = re_compiler(reg, re.S)
         match = compiled_re.match(self.text, self.pos)
         if match is None:
@@ -165,26 +165,26 @@ indent_cache = {}
 
 class char_parser(python_parser.GeneratedParser):
     @property
-    def _cache(self):
+    def _cache(self) -> Any:
         return self._caches[self._indent_num]
     @_cache.setter
-    def _cache(self, value):
+    def _cache(self, value: Any) -> Any:
         pass
-    def __init__(self, tokenizer: Tokenizer, *, verbose: bool = False):
+    def __init__(self, tokenizer: Tokenizer, *, verbose: bool = False) -> None:
         super().__init__(tokenizer, verbose=verbose)
         self._indent_levels = ['']
-        self._caches = {}
+        self._caches : dict[int, Any] = {}
         self._update_indent()
         self._state = state(self)
-        self._str_level = []
-        self._bracket_level = []
-        self._func_level = [0]
-        self._loop_level = [0]
+        self._str_level: list[None] = []
+        self._bracket_level: list[None] = []
+        self._func_level: list[None] = [0]
+        self._loop_level: list[None] = [0]
         self._functools = functools
         self._make_true = make_true
         self._token = token
-        self._args_level = []
-        self._stre_level = []
+        self._args_level: list[None] = []
+        self._stre_level: list[None] = []
         self._bin_op_to_ast = {
             '+': ast.Add,
             '-': ast.Sub,
@@ -211,26 +211,26 @@ class char_parser(python_parser.GeneratedParser):
             '-': ast.USub,
             '~': ast.Invert,
         }
-    def expect(self, reg: str):
+    def expect(self, reg: str) -> Any:
         if '\0' in reg:
             reg = reg.split('\0', 1)
             return getattr(self._state, reg[0])(reg[1])
         return self._tokenizer.expect(reg)
-    def _unicode_lookup(self, query):
+    def _unicode_lookup(self, query) -> Any:
         try:
             return unicodedata.lookup(query)
         except KeyError:
             return None
-    def _error(self):
+    def _error(self) -> Any:
         raise TabError
-    def _update_indent(self):
+    def _update_indent(self) -> Any:
         key = tuple(self._indent_levels)
         if key not in indent_cache:
             indent_cache[key] = len(indent_cache)
         self._indent_num = indent_cache[key]
         if self._indent_num not in self._caches:
             self._caches[self._indent_num] = {}
-    def _join_str(self, tokens):
+    def _join_str(self, tokens) -> Any:
         values1 = []
         has_joined_str=0
         for q in tokens:
@@ -257,7 +257,7 @@ class char_parser(python_parser.GeneratedParser):
         else:
             return ast.JoinedStr(token=tokens[0].token, values=values2)
 
-def create_ast(text: str, filename: str, verbose: bool = False):
+def create_ast(text: str, filename: str, verbose: bool = False) -> Any:
     rec_lim = sys.getrecursionlimit()
     sys.setrecursionlimit(2**30)
     try:
@@ -285,7 +285,7 @@ def create_ast(text: str, filename: str, verbose: bool = False):
         sys.setrecursionlimit(rec_lim)
 
 
-def ast_equal(ast1, ast2):
+def _ast_equal(ast1: ast.AST | list[ast.AST] | Any, ast2: ast.AST | list[ast.AST] | Any) -> bool:
     return (
         type(ast1) == type(ast2)
             and
@@ -310,7 +310,10 @@ def ast_equal(ast1, ast2):
         )
     )
 
-def all_have_tokens(root):
+def ast_equal(ast1: ast.AST, ast2: ast.AST) -> bool:
+    return _ast_equal(ast1, ast2)
+
+def all_have_tokens(root) -> Any:
     return (
         (1 if isinstance(root.token, token) else print(root)) and all([
             all_have_tokens(getattr(root, field))
