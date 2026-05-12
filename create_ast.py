@@ -20,6 +20,15 @@ import typing
 import python_parser
 from pegen.tokenizer import Tokenizer
 
+checking_cast_t = typing.TypeVar('checking_cast_t')
+
+def checking_cast(t: type[checking_cast_t], val: Any) -> checking_cast_t:
+    assert isinstance(val, t)
+    return val
+
+def to_char_parser(parser: python_parser.GeneratedParser) -> char_parser:
+    return checking_cast(char_parser, parser)
+
 make_true_t = typing.TypeVar('make_true_t')
 
 class make_true(typing.Generic[make_true_t]):
