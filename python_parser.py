@@ -1022,16 +1022,16 @@ class GeneratedParser(Parser):
         if (
             (self.expect('str\0f'))
             and
-            (self.expect('\\{\\{'))
+            (token := self.expect('\\{\\{'))
         ):
-            return a ( '\173' );
+            return token ( '\173' );
         self._reset(mark)
         if (
             (self.expect('str\0f'))
             and
-            (self.expect('\\}\\}'))
+            (token := self.expect('\\}\\}'))
         ):
-            return a ( '\175' );
+            return token ( '\175' );
         self._reset(mark)
         if (
             (self.expect('str\0f'))
@@ -1435,7 +1435,7 @@ class GeneratedParser(Parser):
             and
             (c := self.digitpart())
         ):
-            return a + b + c;
+            return b + c if a is None else a + b + c;
         self._reset(mark)
         if (
             (a := self.digitpart())
@@ -2281,8 +2281,26 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
+    def tupled_expression_item(self) -> Optional[Any]:
+        # tupled_expression_item: expression | star_token ready_to_be_starred_expr
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+        ):
+            return expression;
+        self._reset(mark)
+        if (
+            (self.star_token())
+            and
+            (value := self.ready_to_be_starred_expr())
+        ):
+            return ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) );
+        self._reset(mark)
+        return None;
+
+    @memoize
     def tupled_expression(self) -> Optional[Any]:
-        # tupled_expression: comma_token.expression+ comma_token?
+        # tupled_expression: comma_token.tupled_expression_item+ comma_token?
         mark = self._mark()
         if (
             (vs := self._gather_29())
@@ -2689,7 +2707,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def for_stmt(self) -> Optional[Any]:
-        # for_stmt: indent for_token set_multiple_targets in_token expression colon_and_loop_body [indent else_token colon_and_body]
+        # for_stmt: indent for_token set_multiple_targets in_token tupled_expression colon_and_loop_body [indent else_token colon_and_body]
         mark = self._mark()
         if (
             (self.indent())
@@ -2700,7 +2718,7 @@ class GeneratedParser(Parser):
             and
             (self.in_token())
             and
-            (iter := self.expression())
+            (iter := self.tupled_expression())
             and
             (body := self.colon_and_loop_body())
             and
@@ -2873,17 +2891,17 @@ class GeneratedParser(Parser):
         if (
             (token := self.with_token())
             and
-            (left_paren_token := self.left_paren_token())
+            (self.left_paren_token())
             and
             (items := self._gather_53())
             and
-            (opt := self.comma_token(),)
+            (self.comma_token(),)
             and
-            (right_paren_token := self.right_paren_token())
+            (self.right_paren_token())
             and
             (body := self.colon_and_body())
         ):
-            return [token, left_paren_token, items, opt, right_paren_token, body];
+            return [token , items , body];
         self._reset(mark)
         if (
             (token := self.with_token())
@@ -2920,7 +2938,7 @@ class GeneratedParser(Parser):
             and
             (a := self.with_stmt_impl())
         ):
-            return ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] [0] if item [1] else None ) for item in a [1]] , body = + a [2] , ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( );
+            return ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] , ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -3744,7 +3762,7 @@ class GeneratedParser(Parser):
             and
             (self.star_token())
         ):
-            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token , name = '*' )] , level = len ( module [0] ) ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 0 else create_ast . to_char_parser ( self ) . _error ( );
+            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = '*' )] , level = len ( module [0] ) ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 0 else create_ast . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -4250,13 +4268,13 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_30(self) -> Optional[Any]:
-        # _loop0_30: comma_token expression
+        # _loop0_30: comma_token tupled_expression_item
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.expression())
+            (elem := self.tupled_expression_item())
         ):
             children.append(elem)
             mark = self._mark()
@@ -4265,10 +4283,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def _gather_29(self) -> Optional[Any]:
-        # _gather_29: expression _loop0_30
+        # _gather_29: tupled_expression_item _loop0_30
         mark = self._mark()
         if (
-            (elem := self.expression())
+            (elem := self.tupled_expression_item())
             is not None
             and
             (seq := self._loop0_30())

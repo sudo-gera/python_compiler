@@ -4,3 +4,18 @@
 [submodule "tests/proxy.py"]
 	path = tests/proxy.py
 	url = https://github.com/abhinavsingh/proxy.py.git
+[submodule "tests/wechat-decrypt"]
+	path = tests/wechat-decrypt
+	url = https://github.com/ylytdeng/wechat-decrypt
+[submodule "tests/stable-diffusion-webui"]
+	path = tests/stable-diffusion-webui
+	url = https://github.com/AUTOMATIC1111/stable-diffusion-webui
+[submodule "tests/django"]
+	path = tests/django
+	url = https://github.com/django/django
+[submodule "tests/flask"]
+	path = tests/flask
+	url = https://github.com/pallets/flask
+[submodule "tests/fastapi"]
+	path = tests/fastapi
+	url = https://github.com/fastapi/fastapi

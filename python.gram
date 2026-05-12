@@ -161,8 +161,8 @@ stre:
     | stre3
 
 str_char:
-    | 'str\0f'  token='\\{\\{'                { a('\173') }
-    | 'str\0f'  token='\\}\\}'                { a('\175') }
+    | 'str\0f'  token='\\{\\{'                { token('\173') }
+    | 'str\0f'  token='\\}\\}'                { token('\175') }
     | 'str\0f'  token='\\{\\}'                { None }
     | 'str\0f'  a=r'\{' value_begin=spaces value=f_expression as_token=assign_token? conversion='(![ras])?' format_spec=(r':' 'append_str\0f' start_stre_b str_end 'pop_str\0f' | r'\}') {
         [
@@ -260,7 +260,7 @@ integer:
 digitpart: r'[0-9][_0-9]*'
 
 pointfloat:
-    | a=[digitpart] b=r'\.' c=digitpart { a+b+c }
+    | a=[digitpart] b=r'\.' c=digitpart { b+c if a is None else a+b+c }
     | a=digitpart b=r'\.' { a+b }
 
 exponentfloat : a=(pointfloat | digitpart) b=r'[eE][+-]?' c=digitpart { a+b+c }
@@ -484,7 +484,11 @@ expression:
     }
     | conditional_expression
 
-tupled_expression: vs=comma_token.expression+ tc=comma_token? { vs[0] if len(vs) == 1 and not tc else ast.Tuple(token=vs[0].token, elts=vs, ctx=ast.Load(token=vs[0].token)) }
+tupled_expression_item: #local
+    | expression
+    | star_token value=ready_to_be_starred_expr { ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)) }
+
+tupled_expression: vs=comma_token.tupled_expression_item+ tc=comma_token? { vs[0] if len(vs) == 1 and not tc else ast.Tuple(token=vs[0].token, elts=vs, ctx=ast.Load(token=vs[0].token)) }
 
 walrus_expression: new_node=[set_name walrus_token] value=expression { ast.NamedExpr(token=value.token, target=new_node[0], value=value) if new_node else value }
 
@@ -586,7 +590,7 @@ if_stmt: indent=indent token=if_token test=walrus_expression body=colon_and_body
         )[0]
     }
 
-for_stmt: indent token=for_token target=set_multiple_targets in_token iter=expression body=colon_and_loop_body orelse=[indent else_token colon_and_body] {
+for_stmt: indent token=for_token target=set_multiple_targets in_token iter=tupled_expression body=colon_and_loop_body orelse=[indent else_token colon_and_body] {
         ast.For(
             token=token,
             target=target,
@@ -638,7 +642,7 @@ except_star: a=(indent except_token star_token [expression [as_token identifier]
 
 
 with_stmt_impl: #local
-    | token=with_token left_paren_token items=comma_token.(expression [as_token set_array_target])+ comma_token? right_paren_token body=colon_and_body
+    | token=with_token left_paren_token items=comma_token.(expression [as_token set_array_target])+ comma_token? right_paren_token body=colon_and_body { [token, items, body] }
     | token=with_token items=comma_token.(expression [as_token set_array_target])+ body=colon_and_body
 
 with_stmt: indent a=with_stmt_impl {
@@ -652,7 +656,7 @@ with_stmt: indent a=with_stmt_impl {
 async_with_stmt: indent async_token a=with_stmt_impl {
     ast.AsyncWith(
         token=a[0],
-        items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1][0] if item[1] else None) for item in a[1]],
+        items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1] if item[1] else None) for item in a[1]],
         body=+a[2],
     ) if create_ast.to_char_parser(self)._func_level[-1] == 2 else create_ast.to_char_parser(self)._error()
 }
@@ -862,7 +866,7 @@ import_stmt:
         ast.ImportFrom(
             token=token,
             module='.'.join([+c for c in module[1]]) if module[1] else None,
-            names=[ast.alias(token, name='*')],
+            names=[ast.alias(token=token, name='*')],
             level=len(module[0])
         ) if create_ast.to_char_parser(self)._func_level[-1] == 0 else create_ast.to_char_parser(self)._error()
     }

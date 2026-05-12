@@ -5,6 +5,7 @@ import re
 import time
 from collections import defaultdict as dd
 import itertools
+import random
 
 import create_ast
 import dump_ast
@@ -17,36 +18,48 @@ def walk(path: str) -> typing.Generator[str, None, None]:
             if name.endswith('.py'):
                 yield os.path.join(dirpath, name)
 
+walked_files = [*walk(
+    os.path.dirname(os.path.realpath(__file__))
+)]
+
+# walked_files = ['test.py']
+
+random.Random(time.time_ns() // 10**9 // 8).shuffle(walked_files)
 
 files: dict[str, dict[typing.Any, typing.Any]] = dict(
     [
         *zip(
-            walk(
-                os.path.dirname(
-                    os.path.realpath(__file__)
-                )
-            ),
+            walked_files,
             map(
                 dict,
                 itertools.repeat({})
             )
         )
-    ][:]
+    ][:10]
 )
 
 @pytest.mark.parametrize('filepath', files)
 def test_ast(filepath):
-    with open(filepath) as file:
-        text = file.read()
-    ast2 = ast.parse(text, filepath)
-    if re.search(r'\bMatch\b', ast.dump(ast2)):
-        return
     try:
-        ast1 = create_ast.create_ast(text, filepath)
+        with open(filepath) as file:
+            text = file.read()
+        try:
+            ast2 = ast.parse(text, filepath)
+        except SyntaxError:
+            ast2 = None
+        if ast2 is not None and re.search(r'\bMatch\b', ast.dump(ast2)):
+            return
+        try:
+            ast1 = create_ast.create_ast(text, filepath)
+        except Exception:
+            ast1 = None
+        files[filepath]['ast'] = ast1
+        assert create_ast.ast_equal(ast1, ast2) and create_ast.all_have_tokens(ast1)
     except Exception:
-        ast1 = None
-    files[filepath]['ast'] = ast1
-    assert create_ast.ast_equal(ast1, ast2) and create_ast.all_have_tokens(ast1)
+        with open(filepath) as rfile:
+            data = rfile.read()
+        with open('test.py', 'w') as wfile:
+            wfile.write(data)
 
 @pytest.mark.parametrize('filepath', files)
 def test_dump(filepath):

@@ -13,9 +13,17 @@ class indent_writer:
     def __call__(self) -> None:
         if self.is_first and self.is_first.pop():
 
-            self.file.write('' if self.indent is None else '\n' + self.indent * self.level)
+            self.file.write(
+                ''
+                    if self.indent is None else
+                '\n' + self.indent * self.level
+            )
         else:
-            self.file.write(', ' if self.indent is None else ',\n' + self.indent * self.level)
+            self.file.write(
+                ', '
+                    if self.indent is None else
+                ',\n' + self.indent * self.level
+            )
 
 def print_ast(root: ast.AST, indent: str | int | None = None, file: typing.IO[str] = sys.stdout, level: int = -1) -> None:
     level += 1

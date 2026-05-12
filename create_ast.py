@@ -220,6 +220,7 @@ class char_parser(python_parser.GeneratedParser):
             '-': ast.USub,
             '~': ast.Invert,
         }
+        self._ic = __import__('icecream').ic
     def expect(self, reg: str) -> Any:
         if '\0' in reg:
             reg = reg.split('\0', 1)
@@ -295,29 +296,38 @@ def create_ast(text: str, filename: str, verbose: bool = False) -> Any:
 
 
 def _ast_equal(ast1: ast.AST | list[ast.AST] | Any, ast2: ast.AST | list[ast.AST] | Any) -> bool:
-    return (
-        type(ast1) == type(ast2)
-            and
-        (
-            (
-                ast1._fields == ast2._fields
-                    and
-                all([
-                    ast_equal(getattr(ast1, field), getattr(ast2, field))
-                    for field in ast1._fields
-                ])
-            ) if isinstance(ast1, ast.AST) else (
-                len(ast1) == len(ast2)
-                    and
-                all([
-                    ast_equal(item1, item2)
-                    for item1, item2 in zip(ast1, ast2)
-                ])
-            ) if isinstance(ast1, list) else (
-                ast1 == ast2
-            )
-        )
-    )
+    if isinstance(ast1, ast.AST) and isinstance(ast2, ast.AST):
+        if type(ast1) != type(ast2):
+            print(ast.dump(ast1, indent=4))
+            print(ast.dump(ast2, indent=4))
+            return False
+        if ast1._fields != ast2._fields:
+            print(ast.dump(ast1, indent=4))
+            print(ast.dump(ast2, indent=4))
+            return False
+        for field in ast1._fields:
+            if not ast_equal(getattr(ast1, field), getattr(ast2, field)):
+                return False
+        return True
+    if isinstance(ast1, list) and isinstance(ast2, list):
+        if len(ast1) != len(ast2):
+            print(ast1)
+            print(ast2)
+            return False
+        for item1, item2 in zip(ast1, ast2):
+            if not ast_equal(item1, item2):
+                return False
+        return True
+    if type(ast1) != type(ast2):
+        print(ast1)
+        print(ast2)
+        return False
+    else:
+        if ast1 != ast2:
+            print(ast1)
+            print(ast2)
+            return False
+        return True
 
 def ast_equal(ast1: ast.AST, ast2: ast.AST) -> bool:
     return _ast_equal(ast1, ast2)
