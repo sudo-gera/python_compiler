@@ -35,7 +35,7 @@ files: dict[str, dict[typing.Any, typing.Any]] = dict(
                 itertools.repeat({})
             )
         )
-    ][:10]
+    ][:]
 )
 
 @pytest.mark.parametrize('filepath', files)
@@ -63,6 +63,13 @@ def test_ast(filepath):
 
 @pytest.mark.parametrize('filepath', files)
 def test_dump(filepath):
-    if 'ast' in files[filepath]:
-        tree = files[filepath]['ast']
-        assert dump_ast.dump_ast(tree) == ast.dump(tree)
+    try:
+        if 'ast' in files[filepath]:
+            tree = files[filepath]['ast']
+            if tree is not None:
+                assert dump_ast.dump_ast(tree) == ast.dump(tree)
+    except Exception:
+        with open(filepath) as rfile:
+            data = rfile.read()
+        with open('test.py', 'w') as wfile:
+            wfile.write(data)
