@@ -1,18 +1,39 @@
 #!/usr/bin/env bash
-set -xeuo pipefail
+set -euo pipefail
 
-cd "$(
-    dirname "$(
-        realpath "$0"
+if [ "$#" -lt 1 ]
+then
+    printf "usage:\n\t%q path_or_name_of_python_executable\n" "$0"
+    exit 1
+fi
+
+set -x
+
+py="$(
+    realpath -- "$(
+        which -- "$1"
     )"
 )"
 
-python3 -m coverage run --include=create_ast.py,python_parser.py -m pytest test_all.py
-python3 -m coverage html
-python3 -m coverage report
-if python3 -m pegen --help
-then
-    python3 -m pegen python.gram -qo python_parser_new.py
-    diff python_parser_new.py python_parser.py
-    rm python_parser_new.py
-fi
+cd "$(
+    dirname -- "$(
+        realpath -- "$0"
+    )"
+)"
+
+"${py}" -m venv ./venv
+rm ./venv/bin/python
+rm ./venv/bin/python3
+ln -s "${py}" ./venv/bin/python
+ln -s "${py}" ./venv/bin/python3
+
+./venv/bin/python3 -m pip install pytest coverage pytest-xdist icecream
+
+pegen_py="$(mktemp --suffix .py)"
+trap 'rm -- "${pegen_py}"' EXIT
+
+python3 -m pegen python.gram -qo "${pegen_py}"
+diff "${pegen_py}" python_parser.py # returns 0 only if equal
+
+./venv/bin/python3 -m pytest -n auto ./test_all.py
+
