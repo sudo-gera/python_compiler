@@ -15,18 +15,21 @@ import os.path
 import json
 import token as token_module
 import argparse
+import typing
 
 import python_parser
+from pegen.tokenizer import Tokenizer
 
+make_true_t = typing.TypeVar('make_true_t')
 
-class make_true:
-    def __init__(self, value):
+class make_true(typing.Generic[make_true_t]):
+    def __init__(self, value: make_true_t):
         self.value = value
-    def __pos__(self):
+    def __pos__(self) -> make_true_t:
         return self.value
     def __repr__(self) -> str:
         return repr(self.value)
-    def __call__(self):
+    def __call__(self) -> make_true_t:
         return self.value
 
 class token:
@@ -116,8 +119,8 @@ def memoize(method):
 
 
 re_compiler = functools.cache(re.compile)
-class char_tokenizer:
-    def __init__(self, text, filename, verbose):
+class char_tokenizer(Tokenizer):
+    def __init__(self, text: str, filename: str, verbose: bool):
         self.text = text
         self.filename = filename
         self.pos = 0
@@ -167,8 +170,8 @@ class char_parser(python_parser.GeneratedParser):
     @_cache.setter
     def _cache(self, value):
         pass
-    def __init__(self, *a, **s):
-        super().__init__(*a, **s)
+    def __init__(self, tokenizer: Tokenizer, *, verbose: bool = False):
+        super().__init__(tokenizer, verbose=verbose)
         self._indent_levels = ['']
         self._caches = {}
         self._update_indent()
@@ -254,12 +257,12 @@ class char_parser(python_parser.GeneratedParser):
         else:
             return ast.JoinedStr(token=tokens[0].token, values=values2)
 
-def create_ast(text, filename, verbose=0):
+def create_ast(text: str, filename: str, verbose: bool = False):
     rec_lim = sys.getrecursionlimit()
     sys.setrecursionlimit(2**30)
     try:
-        for v in range(verbose, 2):
-            tokenizer = char_tokenizer(text, filename, v)
+        for v in range(int(verbose), 2):
+            tokenizer = char_tokenizer(text, filename, bool(v))
             parser = char_parser(tokenizer, verbose=verbose)
             if not verbose:
                 for name in dir(parser):
@@ -327,7 +330,7 @@ def all_have_tokens(root):
 if __name__ == '__main__':
     import main
     args = main.main()
-    ast1 = create_ast(args.text, args.filename, args.verbose)
+    ast1 = create_ast(typing.cast(str, args.text), typing.cast(str, args.filename), typing.cast(bool, args.verbose))
     if args.verbose or not args.check:
         print(ast.dump(ast1, indent=4))
     if args.check:
