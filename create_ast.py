@@ -41,8 +41,8 @@ class make_true(typing.Generic[make_true_t]):
     def __call__(self) -> make_true_t:
         return self.value
 
-class token:
-    def __init__(self, s, tokenizer, filename, pos, length) -> None:
+class token(tokenize.TokenInfo):
+    def __init__(self, s: str, tokenizer: char_tokenizer, filename: str, pos: int, length: int) -> None:
         self.s = s
         self.tokenizer = tokenizer
         self.filename = filename
@@ -51,16 +51,16 @@ class token:
     @property
     def coord(self) -> Any:
         return self.tokenizer.get_coordinates(self.pos)
-    def __pos__(self) -> Any:
+    def __pos__(self) -> str:
         return self.s
-    def __repr__(self) -> Any:
+    def __repr__(self) -> str:
         # return f'\x1b[32m{self.s!r} at {self.filename}:{self.coord[0]}:{self.coord[1]}\x1b[0m'
         return f'{self.s!r} at {self.filename}:{self.coord[0]}:{self.coord[1]}'
         # return f'{self.s!r}'
     def __add__(self, t) -> Any:
         assert isinstance(t, token)
         return self(self.s + +t)
-    def __call__(self, s=None) -> Any:
+    def __call__(self, s: token | str | None = None) -> str | token:
         if s is None:
             return +self
         if isinstance(s, token):
@@ -81,7 +81,7 @@ class token:
 
 
 class state:
-    def __init__(self, parser) -> Any:
+    def __init__(self, parser: char_parser) -> Any:
         self.parser = parser
     def append_str(self, s) -> Any:
         self.parser._str_level.append(s)
@@ -169,7 +169,7 @@ class char_tokenizer(Tokenizer):
         self.pos += length
         return token(res, self, self.filename, self.pos-length, length)
 
-indent_cache = {}
+indent_cache: dict[Any, Any] = {}
 
 
 class char_parser(python_parser.GeneratedParser):
@@ -193,7 +193,7 @@ class char_parser(python_parser.GeneratedParser):
         self._make_true = make_true
         self._token = token
         self._args_level: list[None] = []
-        self._stre_level: list[None] = []
+        self._stre_level: list[str] = []
         self._bin_op_to_ast = {
             '+': ast.Add,
             '-': ast.Sub,
