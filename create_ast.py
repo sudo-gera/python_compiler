@@ -105,7 +105,7 @@ class state:
         return True
     def if_in_brackets(self, s) -> Any:
         return self.parser._bracket_level
-        
+
 def memoize(method) -> Any:
     """Memoize a symbol method."""
     cache = {}

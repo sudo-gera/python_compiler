@@ -265,7 +265,7 @@ pointfloat:
 
 exponentfloat : a=(pointfloat | digitpart) b=r'[eE][+-]?' c=digitpart { a+b+c }
 
-floatnumber: 
+floatnumber:
     | exponentfloat
     | pointfloat
 
@@ -682,7 +682,7 @@ parameter:
     | parameter_without_colon
 defparameter: arg=parameter default=[assign_token expression] { [arg, default[1] if default else None] }
 parameter_starstar: starstar_token kwarg=parameter [comma_token] { dict(kwarg=kwarg) }
-parameter_list_starargs   : 
+parameter_list_starargs   :
     | others=parameter_starstar { dict(vararg=None, kwonlyargs=[], kw_defaults=[]) | others }
     | star_token vararg=[parameter] kwonlyargs=(comma_token defparameter)* others=[comma_token [parameter_starstar]] {
         (
@@ -693,7 +693,7 @@ parameter_list_starargs   :
             kw_defaults=[q[1][1] for q in kwonlyargs] if kwonlyargs else [],
         )
     }
-parameter_list_no_posonly : 
+parameter_list_no_posonly :
     | args=comma_token.defparameter+ others=[comma_token [parameter_list_starargs]] {
         (
             others[1] if others and others[1] else dict(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
@@ -703,7 +703,7 @@ parameter_list_no_posonly :
         )
     }
     | others=parameter_list_starargs  { dict(args=[], defaults=[]) | others }
-parameter_list:  
+parameter_list:
     | posonlyargs=comma_token.defparameter+ comma_token slash_token others=[comma_token [parameter_list_no_posonly]] {
         (
             others[1] if others and others[1] else dict(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
