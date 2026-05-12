@@ -24,52 +24,41 @@ walked_files = [*walk(
 
 # walked_files = ['test.py']
 
-random.Random(time.time_ns() // 10**9 // 8).shuffle(walked_files)
+with open('test_seed.txt') as file:
+    test_random = random.Random(file.read())
 
-files: dict[str, dict[typing.Any, typing.Any]] = dict(
-    [
-        *zip(
-            walked_files,
-            map(
-                dict,
-                itertools.repeat({})
-            )
-        )
-    ][:]
-)
+test_random.shuffle(walked_files)
 
-@pytest.mark.parametrize('filepath', files)
+@pytest.mark.parametrize('filepath', walked_files)
 def test_ast(filepath):
     try:
         with open(filepath) as file:
             text = file.read()
-        try:
-            ast2 = ast.parse(text, filepath)
-        except SyntaxError:
-            ast2 = None
-        if ast2 is not None and re.search(r'\bMatch\b', ast.dump(ast2)):
-            return
-        try:
-            ast1 = create_ast.create_ast(text, filepath)
-        except Exception:
-            ast1 = None
-        files[filepath]['ast'] = ast1
-        assert create_ast.ast_equal(ast1, ast2) and create_ast.all_have_tokens(ast1)
-    except Exception:
-        with open(filepath) as rfile:
-            data = rfile.read()
-        with open('test.py', 'w') as wfile:
-            wfile.write(data)
 
-@pytest.mark.parametrize('filepath', files)
-def test_dump(filepath):
-    try:
-        if 'ast' in files[filepath]:
-            tree = files[filepath]['ast']
-            if tree is not None:
-                assert dump_ast.dump_ast(tree) == ast.dump(tree)
+        try:
+            lib_ast = ast.parse(text, filepath)
+            lib_dump = ast.dump(lib_ast)
+        except SyntaxError:
+            lib_ast = None
+            lib_dump = None
+
+        if lib_ast is not None and re.search(r'\bMatch\b', lib_dump):
+            return
+
+        try:
+            app_ast = create_ast.create_ast(text, filepath)
+            app_dump = dump_ast.dump_ast(app_ast)
+        except Exception:
+            app_ast = None
+            app_dump = None
+
+        assert app_dump == lib_dump
+
+        assert create_ast.ast_equal(app_ast, lib_ast)
+
+        assert create_ast.all_have_tokens(app_ast)
+
     except Exception:
-        with open(filepath) as rfile:
-            data = rfile.read()
         with open('test.py', 'w') as wfile:
-            wfile.write(data)
+            wfile.write(text)
+        raise
