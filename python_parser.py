@@ -1055,7 +1055,7 @@ class GeneratedParser(Parser):
             and
             (format_spec := self._tmp_3())
         ):
-            return [ast . Constant ( token = a , value = create_ast . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' , ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = ( None if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] for values in [+ format_spec [3]]] [0] ) ) )] [not as_token :];
+            return [ast . Constant ( token = a , value = create_ast . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' , ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = ( None if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] * 0 for values in [+ format_spec [3]]] [0] [: : - 1] ) ) )] [not as_token :];
         self._reset(mark)
         if (
             (self.expect('str\0'))
