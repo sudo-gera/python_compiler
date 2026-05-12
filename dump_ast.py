@@ -1,20 +1,22 @@
 import ast
 import sys
 import io
+import typing
 
 class indent_writer:
-    def __init__(self, indent, file, level):
+    def __init__(self, indent: str | None, file: typing.IO[str], level: int) -> None:
         self.indent = indent
         self.file = file
         self.is_first = [1]
         self.level = level
-    def __call__(self):
+    def __call__(self) -> None:
         if self.is_first and self.is_first.pop():
+
             self.file.write('' if self.indent is None else '\n' + self.indent * self.level)
         else:
             self.file.write(', ' if self.indent is None else ',\n' + self.indent * self.level)
 
-def print_ast(root: ast.AST, indent=None, file=sys.stdout, level=-1):
+def print_ast(root: ast.AST, indent: str | int | None = None, file: typing.IO[str] = sys.stdout, level: int = -1) -> None:
     level += 1
     if isinstance(indent, int):
         indent *= ' '
@@ -37,7 +39,7 @@ def print_ast(root: ast.AST, indent=None, file=sys.stdout, level=-1):
     else:
         file.write(repr(root))
 
-def dump_ast(root: ast.AST, indent=None):
+def dump_ast(root: ast.AST, indent: str | int | None = None) -> str:
     file = io.StringIO()
     print_ast(root, indent, file)
     return file.getvalue()    

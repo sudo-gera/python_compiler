@@ -9,14 +9,16 @@ import itertools
 import create_ast
 import dump_ast
 
-def walk(path: str):
+import typing
+
+def walk(path: str) -> typing.Generator[str, None, None]:
     for (dirpath, dirnames, filenames) in os.walk(path):
         for name in filenames:
             if name.endswith('.py'):
                 yield os.path.join(dirpath, name)
 
 
-files = dict(
+files: dict[str, dict[typing.Any, typing.Any]] = dict(
     [
         *zip(
             walk(

@@ -1,6 +1,6 @@
 import argparse
 
-def main():
+def main() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument('filename')
     parser.add_argument('--verbose', action='store_true')
