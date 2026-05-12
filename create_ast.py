@@ -72,7 +72,7 @@ class token(tokenize.TokenInfo):
             self.pos,
             self.length,
         )
-    def error(self, msg) -> Any:
+    def error(self, msg: str) -> None:
         raise SyntaxError(msg, (
             os.path.realpath(self.filename),
             *self.coord,
@@ -138,23 +138,23 @@ class char_tokenizer(Tokenizer):
         if not verbose: # works faster but no max_pos
             self.reset = functools.partial(self.__dict__.__setitem__, 'pos')
             self.mark = functools.partial(self.__dict__.__getitem__, 'pos')
-    def mark(self) -> Any:
+    def mark(self) -> int:
         return self.pos
-    def reset(self, mark) -> Any:
+    def reset(self, mark: int) -> None:
         self.pos = mark
         if self.pos > self.max_pos:
             self.max_pos = self.pos
-    def get_coordinates(self, pos=None) -> Any:
+    def get_coordinates(self, pos: int | None = None) -> tuple[int, int]:
         if pos is None:
             pos = self.pos
         line_num = bisect.bisect_right(self.index_of_prev_new_line, pos)-1
         pos_in_line = pos - self.index_of_prev_new_line[line_num]
         return line_num+1, pos_in_line
-    def peek(self) -> Any:
+    def peek(self) -> tokenize.TokenInfo:
         buffer = self.text[self.pos:self.pos+64]
         line_num, pos_in_line = self.get_coordinates()
         return tokenize.TokenInfo(token_module.OP, buffer, (line_num, pos_in_line), (line_num, pos_in_line+64), repr(buffer))
-    def diagnose(self) -> Any:
+    def diagnose(self) -> tokenize.TokenInfo:
         return self.peek()
     def expect(self, reg: str) -> Any:
         compiled_re = re_compiler(reg, re.S)
