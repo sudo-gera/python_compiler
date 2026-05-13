@@ -16,6 +16,7 @@ import json
 import token as token_module
 import argparse
 import typing
+import io
 
 import python_parser
 from pegen.tokenizer import Tokenizer
@@ -349,15 +350,51 @@ def all_have_tokens(root) -> Any:
             print(root)
     )
 
-if __name__ == '__main__':
-    import main
-    args = main.main()
-    ast1 = create_ast(typing.cast(str, args.text), typing.cast(str, args.filename), typing.cast(bool, args.verbose))
-    if args.verbose or not args.check:
-        print(ast.dump(ast1, indent=4))
-    if args.check:
-        ast2 = ast.parse(args.text, args.filename)
-        if args.verbose:
-            print(ast.dump(ast2, indent=4))
-        assert all_have_tokens(ast1)
-        assert ast_equal(ast1, ast2)
+class indent_writer:
+    def __init__(self, indent: str | None, file: typing.IO[str], level: int) -> None:
+        self.indent = indent
+        self.file = file
+        self.is_first = [1]
+        self.level = level
+    def __call__(self) -> None:
+        if self.is_first and self.is_first.pop():
+
+            self.file.write(
+                ''
+                    if self.indent is None else
+                '\n' + self.indent * self.level
+            )
+        else:
+            self.file.write(
+                ', '
+                    if self.indent is None else
+                ',\n' + self.indent * self.level
+            )
+
+def print_ast(root: ast.AST, indent: str | None = None, file: typing.IO[str] = sys.stdout, level: int = 0) -> None:
+    level += 1
+    if isinstance(root, ast.AST):
+        file.write(f'{type(root).__name__}(')
+        fields = [f for f in root._fields if getattr(root, f) is not None or getattr(type(root), f, ...) is not None]
+        ind = indent_writer(indent, file, level)
+        for f in fields:
+            ind()
+            file.write(f'{f}=')
+            print_ast(getattr(root, f), indent, file, level)
+        file.write(')')
+    elif isinstance(root, list):
+        file.write('[')
+        ind = indent_writer(indent, file, level)
+        for q in root:
+            ind()
+            print_ast(q, indent, file, level)
+        file.write(']')
+    else:
+        file.write(repr(root))
+
+def dump_ast(root: ast.AST, indent: str | int | None = None) -> str:
+    if isinstance(indent, int):
+        indent *= ' '
+    file = io.StringIO()
+    print_ast(root, indent, file)
+    return file.getvalue()    

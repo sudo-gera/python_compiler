@@ -6,11 +6,9 @@ import time
 from collections import defaultdict as dd
 import itertools
 import random
-
-import create_ast
-import dump_ast
-
 import typing
+
+import char_parser
 
 def walk(path: str) -> typing.Generator[str, None, None]:
     for (dirpath, dirnames, filenames) in os.walk(path):
@@ -47,15 +45,15 @@ def test_ast(filepath):
             return
 
         try:
-            app_ast = create_ast.create_ast(text, filepath)
-            app_dump = dump_ast.dump_ast(app_ast)
+            app_ast = char_parser.create_ast(text, filepath)
+            app_dump = char_parser.dump_ast(app_ast)
         except Exception:
             app_ast = None
             app_dump = None
 
         assert app_dump == lib_dump
-        assert create_ast.ast_equal(app_ast, lib_ast)
-        assert create_ast.all_have_tokens(app_ast)
+        assert char_parser.ast_equal(app_ast, lib_ast)
+        assert char_parser.all_have_tokens(app_ast)
 
     except Exception:
         with open('last_failed.py', 'w') as wfile:

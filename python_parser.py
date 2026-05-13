@@ -9,7 +9,7 @@ from typing import Any, Optional
 
 from pegen.parser import memoize, memoize_left_rec, logger, Parser
 
-import create_ast
+import char_parser
 
 # Keywords and soft keywords are listed at the end of the parser definition.
 class GeneratedParser(Parser):
@@ -554,7 +554,7 @@ class GeneratedParser(Parser):
             and
             (self.spaces())
         ):
-            return token if create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -567,7 +567,7 @@ class GeneratedParser(Parser):
             and
             (self.spaces())
         ):
-            return token if create_ast . to_char_parser ( self ) . _func_level [- 1] else create_ast . to_char_parser ( self ) . _error ( );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -580,7 +580,7 @@ class GeneratedParser(Parser):
             and
             (self.spaces())
         ):
-            return token if create_ast . to_char_parser ( self ) . _func_level [- 1] else create_ast . to_char_parser ( self ) . _error ( );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -671,7 +671,7 @@ class GeneratedParser(Parser):
             and
             (self.spaces())
         ):
-            return token if create_ast . to_char_parser ( self ) . _loop_level [- 1] else create_ast . to_char_parser ( self ) . _error ( );
+            return token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -684,7 +684,7 @@ class GeneratedParser(Parser):
             and
             (self.spaces())
         ):
-            return token if create_ast . to_char_parser ( self ) . _loop_level [- 1] else create_ast . to_char_parser ( self ) . _error ( );
+            return token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -929,7 +929,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _stre_level . append ( '\042' )];
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\042' )];
         self._reset(mark)
         return None;
 
@@ -940,7 +940,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _stre_level . append ( '\047' )];
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\047' )];
         self._reset(mark)
         return None;
 
@@ -951,7 +951,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _stre_level . append ( '\042\042\042' )];
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\042\042\042' )];
         self._reset(mark)
         return None;
 
@@ -962,7 +962,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _stre_level . append ( '\047\047\047' )];
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\047\047\047' )];
         self._reset(mark)
         return None;
 
@@ -973,7 +973,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _stre_level . append ( '\175' )];
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\175' )];
         self._reset(mark)
         return None;
 
@@ -984,7 +984,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r'.'))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == create_ast . to_char_parser ( self ) . _stre_level [- 1] else None;
+            return [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None;
         self._reset(mark)
         return None;
 
@@ -995,7 +995,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r'...'))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == create_ast . to_char_parser ( self ) . _stre_level [- 1] else None;
+            return [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None;
         self._reset(mark)
         return None;
 
@@ -1055,35 +1055,35 @@ class GeneratedParser(Parser):
             and
             (format_spec := self._tmp_3())
         ):
-            return [ast . Constant ( token = a , value = create_ast . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' , ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = ( None if isinstance ( format_spec , create_ast . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] * 0 for values in [+ format_spec [3]]] [0] [: : - 1] ) ) )] [not as_token :];
+            return [ast . Constant ( token = a , value = char_parser . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' , ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = ( None if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] * 0 for values in [+ format_spec [3]]] [0] [: : - 1] ) ) )] [not as_token :];
         self._reset(mark)
         if (
             (self.expect('str\0'))
             and
             (token := self.expect('\\\\\n'))
         ):
-            return token ( '' ) if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token;
+            return token ( '' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
             (self.expect('str\0'))
             and
             (token := self.expect('\\\\\\\\'))
         ):
-            return token ( '\\' ) if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token;
+            return token ( '\\' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
             (self.expect('str\0'))
             and
             (token := self.expect('\\\\\47'))
         ):
-            return token ( "\47" ) if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\47" );
+            return token ( "\47" ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\47" );
         self._reset(mark)
         if (
             (self.expect('str\0'))
             and
             (token := self.expect('\\\\\42'))
         ):
-            return token ( '\42' ) if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\42" );
+            return token ( '\42' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\42" );
         self._reset(mark)
         if (
             (self.expect('str\0R'))
@@ -1139,7 +1139,7 @@ class GeneratedParser(Parser):
             and
             (token := self.expect('\\\\[0-7][0-7]?[0-7]?'))
         ):
-            return token ( chr ( [c if 'b' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else c % 256 for c in [int ( token ( ) [1 :] , 8 )]] [0] ) );
+            return token ( chr ( [c if 'b' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else c % 256 for c in [int ( token ( ) [1 :] , 8 )]] [0] ) );
         self._reset(mark)
         if (
             (self.expect('str\0R'))
@@ -1153,28 +1153,28 @@ class GeneratedParser(Parser):
             and
             (token := self.expect('\\\\N\\{[^}]*\\}'))
         ):
-            return [None if c is None else token ( c ) for c in [create_ast . to_char_parser ( self ) . _unicode_lookup ( token ( ) [3 : - 1] )]] [0];
+            return [None if c is None else token ( c ) for c in [char_parser . to_char_parser ( self ) . _unicode_lookup ( token ( ) [3 : - 1] )]] [0];
         self._reset(mark)
         if (
             (self.expect('str\0RB'))
             and
             (token := self.expect('\\\\u[0-9a-fA-F]{4}'))
         ):
-            return token ( chr ( int ( token ( ) [2 :] , 16 ) ) ) if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token;
+            return token ( chr ( int ( token ( ) [2 :] , 16 ) ) ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
             (self.expect('str\0RB'))
             and
             (token := self.expect('\\\\U[0-9a-fA-F]{8}'))
         ):
-            return [token ( chr ( c ) ) if c < 0x110000 else None for c in [int ( token ( ) [2 :] , 16 )]] [0] if 'r' not in create_ast . to_char_parser ( self ) . _str_level [- 1] else token;
+            return [token ( chr ( c ) ) if c < 0x110000 else None for c in [int ( token ( ) [2 :] , 16 )]] [0] if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
             (self.expect('str\0'))
             and
             (token := self.expect(r'\n'))
         ):
-            return token if len ( create_ast . to_char_parser ( self ) . _stre_level [- 1] ) == 3 else create_ast . to_char_parser ( self ) . _error ( );
+            return token if len ( char_parser . to_char_parser ( self ) . _stre_level [- 1] ) == 3 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         if (
             (self.expect('str\0B'))
@@ -1213,14 +1213,14 @@ class GeneratedParser(Parser):
         if (
             (self.stre())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [] );
         self._reset(mark)
         if (
             (a := self.str_char())
             and
             (b := self.str_end())
         ):
-            return [b ( ) . extend ( a [: : - 1] ) if not isinstance ( a , create_ast . to_char_parser ( self ) . _token ) else b ( ) . append ( ast . Constant ( token = a , value = + a ) ) , b] [1];
+            return [b ( ) . extend ( a [: : - 1] ) if not isinstance ( a , char_parser . to_char_parser ( self ) . _token ) else b ( ) . append ( ast . Constant ( token = a , value = + a ) ) , b] [1];
         self._reset(mark)
         return None;
 
@@ -1273,7 +1273,7 @@ class GeneratedParser(Parser):
         if (
             (data := self.str_content())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( data ( ) [: : - 1] );
+            return char_parser . to_char_parser ( self ) . _make_true ( data ( ) [: : - 1] );
         self._reset(mark)
         return None;
 
@@ -1284,7 +1284,7 @@ class GeneratedParser(Parser):
         if (
             (data := self.formatted_str_data())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( '' . join ( [n . value for n in + data] ) );
+            return char_parser . to_char_parser ( self ) . _make_true ( '' . join ( [n . value for n in + data] ) );
         self._reset(mark)
         return None;
 
@@ -1295,7 +1295,7 @@ class GeneratedParser(Parser):
         if (
             (data := self.simple_str_data())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( bytes ( [* map ( ord , + data )] ) );
+            return char_parser . to_char_parser ( self ) . _make_true ( bytes ( [* map ( ord , + data )] ) );
         self._reset(mark)
         return None;
 
@@ -1378,7 +1378,7 @@ class GeneratedParser(Parser):
         if (
             (tokens := self._loop1_4())
         ):
-            return create_ast . to_char_parser ( self ) . _join_str ( [token [0] for token in tokens] );
+            return char_parser . to_char_parser ( self ) . _join_str ( [token [0] for token in tokens] );
         self._reset(mark)
         return None;
 
@@ -1729,7 +1729,7 @@ class GeneratedParser(Parser):
         if (
             (a := self._loop1_10())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [ast . comprehension ( token = a [1] , target = a [2] , iter = a [4] , ifs = [a [1] for a in a [5]] if a [5] else [] , is_async = + bool ( a [0] ) , ) if not a [0] or create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( ) for a in a] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [ast . comprehension ( token = a [1] , target = a [2] , iter = a [4] , ifs = [a [1] for a in a [5]] if a [5] else [] , is_async = + bool ( a [0] ) , ) if not a [0] or char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) for a in a] );
         self._reset(mark)
         return None;
 
@@ -2015,7 +2015,7 @@ class GeneratedParser(Parser):
             and
             (suffixes := self._loop0_17(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda value , suffix : suffix ( value ) , suffixes , value , );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda value , suffix : suffix ( value ) , suffixes , value , );
         self._reset(mark)
         return None;
 
@@ -2041,7 +2041,7 @@ class GeneratedParser(Parser):
             and
             (new_node := self._tmp_18(),)
         ):
-            return ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ new_node [0]] ( token = new_node [0] ) , right = new_node [1] ) if new_node else left;
+            return ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ new_node [0]] ( token = new_node [0] ) , right = new_node [1] ) if new_node else left;
         self._reset(mark)
         return None;
 
@@ -2059,7 +2059,7 @@ class GeneratedParser(Parser):
             and
             (operand := self.u_expr())
         ):
-            return ast . UnaryOp ( token = operand . token , operand = operand , op = create_ast . to_char_parser ( self ) . _un_op_to_ast [+ op] ( token = op ) );
+            return ast . UnaryOp ( token = operand . token , operand = operand , op = char_parser . to_char_parser ( self ) . _un_op_to_ast [+ op] ( token = op ) );
         self._reset(mark)
         return None;
 
@@ -2072,7 +2072,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_19(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2085,7 +2085,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_20(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2098,7 +2098,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_21(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2111,7 +2111,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_22(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2124,7 +2124,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_23(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2137,7 +2137,7 @@ class GeneratedParser(Parser):
             and
             (right := self._loop0_24(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2159,7 +2159,7 @@ class GeneratedParser(Parser):
         if (
             (op := self.comp_token())
         ):
-            return create_ast . to_char_parser ( self ) . _bin_op_to_ast [+ op] ( token = op );
+            return char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ op] ( token = op );
         self._reset(mark)
         if (
             (a := self.is_token())
@@ -2374,7 +2374,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _bracket_level . append ( None )];
+            return [char_parser . to_char_parser ( self ) . _bracket_level . append ( None )];
         self._reset(mark)
         return None;
 
@@ -2385,7 +2385,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _bracket_level . pop ( )];
+            return [char_parser . to_char_parser ( self ) . _bracket_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -2396,7 +2396,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . append ( 1 )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 1 )];
         self._reset(mark)
         return None;
 
@@ -2407,7 +2407,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . pop ( )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -2418,7 +2418,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . append ( 0 ) , create_ast . to_char_parser ( self ) . _func_level . append ( 1 )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 1 )];
         self._reset(mark)
         return None;
 
@@ -2429,7 +2429,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . pop ( ) , create_ast . to_char_parser ( self ) . _func_level . pop ( )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -2440,7 +2440,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . append ( 0 ) , create_ast . to_char_parser ( self ) . _func_level . append ( 2 )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 2 )];
         self._reset(mark)
         return None;
 
@@ -2451,7 +2451,7 @@ class GeneratedParser(Parser):
         if (
             (self.expect(r''))
         ):
-            return [create_ast . to_char_parser ( self ) . _loop_level . pop ( ) , create_ast . to_char_parser ( self ) . _func_level . pop ( )];
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -2462,7 +2462,7 @@ class GeneratedParser(Parser):
         if (
             (a := self.spaces_for_indent())
         ):
-            return [create_ast . to_char_parser ( self ) . _indent_levels . __setitem__ ( - 1 , + a ) , a] [1] if create_ast . to_char_parser ( self ) . _indent_levels [- 1] == None and a ( ) != create_ast . to_char_parser ( self ) . _indent_levels [- 2] and a ( ) . startswith ( create_ast . to_char_parser ( self ) . _indent_levels [- 2] ) else [None , a] [create_ast . to_char_parser ( self ) . _indent_levels [- 1] == + a];
+            return [char_parser . to_char_parser ( self ) . _indent_levels . __setitem__ ( - 1 , + a ) , a] [1] if char_parser . to_char_parser ( self ) . _indent_levels [- 1] == None and a ( ) != char_parser . to_char_parser ( self ) . _indent_levels [- 2] and a ( ) . startswith ( char_parser . to_char_parser ( self ) . _indent_levels [- 2] ) else [None , a] [char_parser . to_char_parser ( self ) . _indent_levels [- 1] == + a];
         self._reset(mark)
         return None;
 
@@ -2477,7 +2477,7 @@ class GeneratedParser(Parser):
             and
             (self.new_line())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( a );
         self._reset(mark)
         return None;
 
@@ -2488,7 +2488,7 @@ class GeneratedParser(Parser):
         if (
             (a := self.multiple_lines_statement())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [a] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [a] );
         self._reset(mark)
         if (
             (self.indent())
@@ -2513,7 +2513,7 @@ class GeneratedParser(Parser):
             and
             (self.new_line())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [] );
         self._reset(mark)
         if (
             (a := self.line_content())
@@ -2533,7 +2533,7 @@ class GeneratedParser(Parser):
             and
             (self.expect('pop_indent\0'))
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [d for s in a for d in + s] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [d for s in a for d in + s] );
         self._reset(mark)
         return None;
 
@@ -2701,7 +2701,7 @@ class GeneratedParser(Parser):
             and
             (orelse := self._tmp_37(),)
         ):
-            return create_ast . to_char_parser ( self ) . _functools . reduce ( lambda a , s : [ast . If ( token = s [1] , test = s [2] , body = + s [3] , orelse = a )] , ( [[indent , token , test , body]] + ( mebbe if mebbe else [] ) ) [: : - 1] , + orelse [2] if orelse else [] ) [0];
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda a , s : [ast . If ( token = s [1] , test = s [2] , body = + s [3] , orelse = a )] , ( [[indent , token , test , body]] + ( mebbe if mebbe else [] ) ) [: : - 1] , + orelse [2] if orelse else [] ) [0];
         self._reset(mark)
         return None;
 
@@ -2749,7 +2749,7 @@ class GeneratedParser(Parser):
             and
             (orelse := self._tmp_39(),)
         ):
-            return ast . AsyncFor ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] , ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( );
+            return ast . AsyncFor ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] , ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -2938,7 +2938,7 @@ class GeneratedParser(Parser):
             and
             (a := self.with_stmt_impl())
         ):
-            return ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] , ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 2 else create_ast . to_char_parser ( self ) . _error ( );
+            return ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] , ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -2976,7 +2976,7 @@ class GeneratedParser(Parser):
             and
             (annotation := self.expression())
         ):
-            return ast . arg ( token = arg , arg = + arg , annotation = annotation ) if create_ast . to_char_parser ( self ) . _args_level [- 1] else None;
+            return ast . arg ( token = arg , arg = + arg , annotation = annotation ) if char_parser . to_char_parser ( self ) . _args_level [- 1] else None;
         self._reset(mark)
         return None;
 
@@ -3104,7 +3104,7 @@ class GeneratedParser(Parser):
         if (
             (args := self.parameter_list())
         ):
-            return args | dict ( defaults = [arg for arg in args ['defaults'] if arg] ) if not any ( [w is None and e is not None for q , w in enumerate ( args ['defaults'] ) for e in args ['defaults'] [: q]] ) else create_ast . to_char_parser ( self ) . _error ( );
+            return args | dict ( defaults = [arg for arg in args ['defaults'] if arg] ) if not any ( [w is None and e is not None for q , w in enumerate ( args ['defaults'] ) for e in args ['defaults'] [: q]] ) else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -3115,7 +3115,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r''))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _args_level . append ( 1 )];
+            return [token , char_parser . to_char_parser ( self ) . _args_level . append ( 1 )];
         self._reset(mark)
         return None;
 
@@ -3126,7 +3126,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r''))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _args_level . pop ( )];
+            return [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -3137,7 +3137,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r''))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _args_level . append ( 0 )];
+            return [token , char_parser . to_char_parser ( self ) . _args_level . append ( 0 )];
         self._reset(mark)
         return None;
 
@@ -3148,7 +3148,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.expect(r''))
         ):
-            return [token , create_ast . to_char_parser ( self ) . _args_level . pop ( )];
+            return [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -3225,7 +3225,7 @@ class GeneratedParser(Parser):
         if (
             (a := self._loop0_67(),)
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( [q for q in a if q is not ...] );
+            return char_parser . to_char_parser ( self ) . _make_true ( [q for q in a if q is not ...] );
         self._reset(mark)
         return None;
 
@@ -3584,7 +3584,7 @@ class GeneratedParser(Parser):
             and
             (value := self.yield_expression())
         ):
-            return ast . AugAssign ( token = op , target = target [0] , op = create_ast . to_char_parser ( self ) . _bin_op_to_ast [op ( ) [: - 1]] ( token = op ) , value = value );
+            return ast . AugAssign ( token = op , target = target [0] , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [op ( ) [: - 1]] ( token = op ) , value = value );
         self._reset(mark)
         return None;
 
@@ -3762,7 +3762,7 @@ class GeneratedParser(Parser):
             and
             (self.star_token())
         ):
-            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = '*' )] , level = len ( module [0] ) ) if create_ast . to_char_parser ( self ) . _func_level [- 1] == 0 else create_ast . to_char_parser ( self ) . _error ( );
+            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = '*' )] , level = len ( module [0] ) ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 0 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
@@ -3822,7 +3822,7 @@ class GeneratedParser(Parser):
             and
             (self.right_bracket_token())
         ):
-            return create_ast . to_char_parser ( self ) . _make_true ( params );
+            return char_parser . to_char_parser ( self ) . _make_true ( params );
         self._reset(mark)
         return None;
 
