@@ -8,997 +8,994 @@ import tokenize
 from typing import Any, Optional
 
 from pegen.parser import memoize, memoize_left_rec, logger, Parser
-import ast
-import sys
-import tokenize
-from typing import Any, Optional
-from pegen.parser import memoize, memoize_left_rec, logger, Parser
+
 import char_parser
+
 # Keywords and soft keywords are listed at the end of the parser definition.
 class GeneratedParser(Parser):
 
     @memoize
     def new_line(self) -> Optional[Any]:
-        # new_line: '(#[^\\n]*)?(\\n|$)'
+        # new_line: r'(#[^\n]*)?(\n|$)'
         mark = self._mark()
         if (
-            (token := self.expect('(#[^\\n]*)?(\\n|$)'))
+            (token := self.expect(r'(#[^\n]*)?(\n|$)'))
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def spaces(self) -> Optional[Any]:
-        # spaces: 'if_in_brackets\x00' spaces_in_brackets | spaces_not_in_brackets
+        # spaces: 'if_in_brackets\0' spaces_in_brackets | spaces_not_in_brackets
         mark = self._mark()
         if (
-            (self.expect('if_in_brackets\x00'))
+            (self.expect('if_in_brackets\0'))
             and
             (a := self.spaces_in_brackets())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         if (
             (spaces_not_in_brackets := self.spaces_not_in_brackets())
         ):
-            return ( lambda spaces_not_in_brackets : spaces_not_in_brackets ) ( spaces_not_in_brackets );
+            return spaces_not_in_brackets;
         self._reset(mark)
         return None;
 
     @memoize
     def spaces_in_brackets(self) -> Optional[Any]:
-        # spaces_in_brackets: auto_generated_0__gather_1
+        # spaces_in_brackets: (!r'$' new_line).spaces_not_in_brackets+
         mark = self._mark()
         if (
-            (tokens := self.auto_generated_0__gather_1())
+            (tokens := self._gather_1())
         ):
-            return ( lambda tokens : tokens [0] ) ( tokens );
+            return tokens [0];
         self._reset(mark)
         return None;
 
     @memoize
     def spaces_not_in_brackets(self) -> Optional[Any]:
-        # spaces_not_in_brackets: '([^\\S\\n]|\\\\\\n)*'
+        # spaces_not_in_brackets: r'([^\S\n]|\\\n)*'
         mark = self._mark()
         if (
-            (token := self.expect('([^\\S\\n]|\\\\\\n)*'))
+            (token := self.expect(r'([^\S\n]|\\\n)*'))
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def spaces_for_indent(self) -> Optional[Any]:
-        # spaces_for_indent: '[^\\S\\n]*'
+        # spaces_for_indent: r'[^\S\n]*'
         mark = self._mark()
         if (
-            (token := self.expect('[^\\S\\n]*'))
+            (token := self.expect(r'[^\S\n]*'))
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def m_token(self) -> Optional[Any]:
-        # m_token: '\\*|@|//|/|%' spaces
+        # m_token: r'\*|@|//|/|%' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\*|@|//|/|%'))
+            (token := self.expect(r'\*|@|//|/|%'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def a_token(self) -> Optional[Any]:
-        # a_token: '\\+|-' spaces
+        # a_token: r'\+|-' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\+|-'))
+            (token := self.expect(r'\+|-'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def shift_token(self) -> Optional[Any]:
-        # shift_token: '<<|>>' spaces
+        # shift_token: r'<<|>>' spaces
         mark = self._mark()
         if (
-            (token := self.expect('<<|>>'))
+            (token := self.expect(r'<<|>>'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def bit_and_token(self) -> Optional[Any]:
-        # bit_and_token: '&' spaces
+        # bit_and_token: r'&' spaces
         mark = self._mark()
         if (
-            (token := self.expect('&'))
+            (token := self.expect(r'&'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def bit_xor_token(self) -> Optional[Any]:
-        # bit_xor_token: '\\^' spaces
+        # bit_xor_token: r'\^' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\^'))
+            (token := self.expect(r'\^'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def bit_or_token(self) -> Optional[Any]:
-        # bit_or_token: '\\|' spaces
+        # bit_or_token: r'\|' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\|'))
+            (token := self.expect(r'\|'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def comp_token(self) -> Optional[Any]:
-        # comp_token: '>=|<=|<|>|==|!=' spaces
+        # comp_token: r'>=|<=|<|>|==|!=' spaces
         mark = self._mark()
         if (
-            (token := self.expect('>=|<=|<|>|==|!='))
+            (token := self.expect(r'>=|<=|<|>|==|!='))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def aug_token(self) -> Optional[Any]:
-        # aug_token: '\\+=|-=|\\*=|@=|//=|/=|%=|\\*\\*=|>>=|<<=|&=|\\^=|\\|=' spaces
+        # aug_token: r'\+=|-=|\*=|@=|//=|/=|%=|\*\*=|>>=|<<=|&=|\^=|\|=' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\+=|-=|\\*=|@=|//=|/=|%=|\\*\\*=|>>=|<<=|&=|\\^=|\\|='))
+            (token := self.expect(r'\+=|-=|\*=|@=|//=|/=|%=|\*\*=|>>=|<<=|&=|\^=|\|='))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def u_token(self) -> Optional[Any]:
-        # u_token: '-|\\+|~' spaces
+        # u_token: r'-|\+|~' spaces
         mark = self._mark()
         if (
-            (token := self.expect('-|\\+|~'))
+            (token := self.expect(r'-|\+|~'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def colon_token(self) -> Optional[Any]:
-        # colon_token: ':' spaces
+        # colon_token: r':' spaces
         mark = self._mark()
         if (
-            (token := self.expect(':'))
+            (token := self.expect(r':'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def walrus_token(self) -> Optional[Any]:
-        # walrus_token: ':=' spaces
+        # walrus_token: r':=' spaces
         mark = self._mark()
         if (
-            (token := self.expect(':='))
+            (token := self.expect(r':='))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def semicolon_token(self) -> Optional[Any]:
-        # semicolon_token: ';' spaces
+        # semicolon_token: r';' spaces
         mark = self._mark()
         if (
-            (token := self.expect(';'))
+            (token := self.expect(r';'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def dot_token(self) -> Optional[Any]:
-        # dot_token: '\\.' spaces
+        # dot_token: r'\.' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\.'))
+            (token := self.expect(r'\.'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def comma_token(self) -> Optional[Any]:
-        # comma_token: ',' spaces
+        # comma_token: r',' spaces
         mark = self._mark()
         if (
-            (token := self.expect(','))
+            (token := self.expect(r','))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def star_token(self) -> Optional[Any]:
-        # star_token: '\\*' spaces
+        # star_token: r'\*' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\*'))
+            (token := self.expect(r'\*'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def starstar_token(self) -> Optional[Any]:
-        # starstar_token: '\\*\\*' spaces
+        # starstar_token: r'\*\*' spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\*\\*'))
+            (token := self.expect(r'\*\*'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def assign_token(self) -> Optional[Any]:
-        # assign_token: '=' !('=') spaces
+        # assign_token: r'=' !r'=' spaces
         mark = self._mark()
         if (
-            (token := self.expect('='))
+            (token := self.expect(r'='))
             and
-            (self.negative_lookahead(self.expect, '='))
+            (self.negative_lookahead(self.expect, r'='))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def returns_token(self) -> Optional[Any]:
-        # returns_token: '->' spaces
+        # returns_token: r'->' spaces
         mark = self._mark()
         if (
-            (token := self.expect('->'))
+            (token := self.expect(r'->'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def decorator_token(self) -> Optional[Any]:
-        # decorator_token: '@' spaces
+        # decorator_token: r'@' spaces
         mark = self._mark()
         if (
-            (token := self.expect('@'))
+            (token := self.expect(r'@'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def slash_token(self) -> Optional[Any]:
-        # slash_token: '/' spaces
+        # slash_token: r'/' spaces
         mark = self._mark()
         if (
-            (token := self.expect('/'))
+            (token := self.expect(r'/'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def left_paren_token(self) -> Optional[Any]:
-        # left_paren_token: '\\(' start_bracket spaces
+        # left_paren_token: r'\(' start_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\('))
+            (token := self.expect(r'\('))
             and
             (self.start_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def right_paren_token(self) -> Optional[Any]:
-        # right_paren_token: '\\)' stop_bracket spaces
+        # right_paren_token: r'\)' stop_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\)'))
+            (token := self.expect(r'\)'))
             and
             (self.stop_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def left_bracket_token(self) -> Optional[Any]:
-        # left_bracket_token: '\\[' start_bracket spaces
+        # left_bracket_token: r'\[' start_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\['))
+            (token := self.expect(r'\['))
             and
             (self.start_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def right_bracket_token(self) -> Optional[Any]:
-        # right_bracket_token: '\\]' stop_bracket spaces
+        # right_bracket_token: r'\]' stop_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\]'))
+            (token := self.expect(r'\]'))
             and
             (self.stop_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def left_brace_token(self) -> Optional[Any]:
-        # left_brace_token: '\\{' start_bracket spaces
+        # left_brace_token: r'\{' start_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\{'))
+            (token := self.expect(r'\{'))
             and
             (self.start_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def right_brace_token(self) -> Optional[Any]:
-        # right_brace_token: '\\}' stop_bracket spaces
+        # right_brace_token: r'\}' stop_bracket spaces
         mark = self._mark()
         if (
-            (token := self.expect('\\}'))
+            (token := self.expect(r'\}'))
             and
             (self.stop_bracket())
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def if_token(self) -> Optional[Any]:
-        # if_token: 'if\\b' spaces
+        # if_token: r'if\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('if\\b'))
+            (token := self.expect(r'if\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def elif_token(self) -> Optional[Any]:
-        # elif_token: 'elif\\b' spaces
+        # elif_token: r'elif\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('elif\\b'))
+            (token := self.expect(r'elif\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def else_token(self) -> Optional[Any]:
-        # else_token: 'else\\b' spaces
+        # else_token: r'else\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('else\\b'))
+            (token := self.expect(r'else\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def for_token(self) -> Optional[Any]:
-        # for_token: 'for\\b' spaces
+        # for_token: r'for\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('for\\b'))
+            (token := self.expect(r'for\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def in_token(self) -> Optional[Any]:
-        # in_token: 'in\\b' spaces
+        # in_token: r'in\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('in\\b'))
+            (token := self.expect(r'in\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def is_token(self) -> Optional[Any]:
-        # is_token: 'is\\b' spaces
+        # is_token: r'is\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('is\\b'))
+            (token := self.expect(r'is\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def not_token(self) -> Optional[Any]:
-        # not_token: 'not\\b' spaces
+        # not_token: r'not\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('not\\b'))
+            (token := self.expect(r'not\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def while_token(self) -> Optional[Any]:
-        # while_token: 'while\\b' spaces
+        # while_token: r'while\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('while\\b'))
+            (token := self.expect(r'while\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def async_token(self) -> Optional[Any]:
-        # async_token: 'async\\b' spaces
+        # async_token: r'async\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('async\\b'))
+            (token := self.expect(r'async\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def await_token(self) -> Optional[Any]:
-        # await_token: 'await\\b' spaces
+        # await_token: r'await\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('await\\b'))
+            (token := self.expect(r'await\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def return_token(self) -> Optional[Any]:
-        # return_token: 'return\\b' spaces
+        # return_token: r'return\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('return\\b'))
+            (token := self.expect(r'return\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def yield_token(self) -> Optional[Any]:
-        # yield_token: 'yield\\b' spaces
+        # yield_token: r'yield\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('yield\\b'))
+            (token := self.expect(r'yield\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if char_parser . to_char_parser ( self ) . _func_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def from_token(self) -> Optional[Any]:
-        # from_token: 'from\\b' spaces
+        # from_token: r'from\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('from\\b'))
+            (token := self.expect(r'from\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def lambda_token(self) -> Optional[Any]:
-        # lambda_token: 'lambda\\b' spaces
+        # lambda_token: r'lambda\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('lambda\\b'))
+            (token := self.expect(r'lambda\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def pass_token(self) -> Optional[Any]:
-        # pass_token: 'pass\\b' spaces
+        # pass_token: r'pass\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('pass\\b'))
+            (token := self.expect(r'pass\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def del_token(self) -> Optional[Any]:
-        # del_token: 'del\\b' spaces
+        # del_token: r'del\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('del\\b'))
+            (token := self.expect(r'del\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def raise_token(self) -> Optional[Any]:
-        # raise_token: 'raise\\b' spaces
+        # raise_token: r'raise\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('raise\\b'))
+            (token := self.expect(r'raise\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def assert_token(self) -> Optional[Any]:
-        # assert_token: 'assert\\b' spaces
+        # assert_token: r'assert\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('assert\\b'))
+            (token := self.expect(r'assert\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def break_token(self) -> Optional[Any]:
-        # break_token: 'break\\b' spaces
+        # break_token: r'break\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('break\\b'))
+            (token := self.expect(r'break\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def continue_token(self) -> Optional[Any]:
-        # continue_token: 'continue\\b' spaces
+        # continue_token: r'continue\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('continue\\b'))
+            (token := self.expect(r'continue\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if char_parser . to_char_parser ( self ) . _loop_level [- 1] else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def import_token(self) -> Optional[Any]:
-        # import_token: 'import\\b' spaces
+        # import_token: r'import\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('import\\b'))
+            (token := self.expect(r'import\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def as_token(self) -> Optional[Any]:
-        # as_token: 'as\\b' spaces
+        # as_token: r'as\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('as\\b'))
+            (token := self.expect(r'as\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def global_token(self) -> Optional[Any]:
-        # global_token: 'global\\b' spaces
+        # global_token: r'global\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('global\\b'))
+            (token := self.expect(r'global\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def nonlocal_token(self) -> Optional[Any]:
-        # nonlocal_token: 'nonlocal\\b' spaces
+        # nonlocal_token: r'nonlocal\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('nonlocal\\b'))
+            (token := self.expect(r'nonlocal\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def type_token(self) -> Optional[Any]:
-        # type_token: 'type\\b' spaces
+        # type_token: r'type\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('type\\b'))
+            (token := self.expect(r'type\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def and_token(self) -> Optional[Any]:
-        # and_token: 'and\\b' spaces
+        # and_token: r'and\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('and\\b'))
+            (token := self.expect(r'and\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def or_token(self) -> Optional[Any]:
-        # or_token: 'or\\b' spaces
+        # or_token: r'or\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('or\\b'))
+            (token := self.expect(r'or\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def def_token(self) -> Optional[Any]:
-        # def_token: 'def\\b' spaces
+        # def_token: r'def\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('def\\b'))
+            (token := self.expect(r'def\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def try_token(self) -> Optional[Any]:
-        # try_token: 'try\\b' spaces
+        # try_token: r'try\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('try\\b'))
+            (token := self.expect(r'try\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def except_token(self) -> Optional[Any]:
-        # except_token: 'except\\b' spaces
+        # except_token: r'except\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('except\\b'))
+            (token := self.expect(r'except\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def finally_token(self) -> Optional[Any]:
-        # finally_token: 'finally\\b' spaces
+        # finally_token: r'finally\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('finally\\b'))
+            (token := self.expect(r'finally\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def with_token(self) -> Optional[Any]:
-        # with_token: 'with\\b' spaces
+        # with_token: r'with\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('with\\b'))
+            (token := self.expect(r'with\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def match_token(self) -> Optional[Any]:
-        # match_token: 'match\\b' spaces
+        # match_token: r'match\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('match\\b'))
+            (token := self.expect(r'match\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def case_token(self) -> Optional[Any]:
-        # case_token: 'case\\b' spaces
+        # case_token: r'case\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('case\\b'))
+            (token := self.expect(r'case\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def class_token(self) -> Optional[Any]:
-        # class_token: 'class\\b' spaces
+        # class_token: r'class\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('class\\b'))
+            (token := self.expect(r'class\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def none_token(self) -> Optional[Any]:
-        # none_token: 'None\\b' spaces
+        # none_token: r'None\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('None\\b'))
+            (token := self.expect(r'None\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def true_token(self) -> Optional[Any]:
-        # true_token: 'True\\b' spaces
+        # true_token: r'True\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('True\\b'))
+            (token := self.expect(r'True\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def false_token(self) -> Optional[Any]:
-        # false_token: 'False\\b' spaces
+        # false_token: r'False\b' spaces
         mark = self._mark()
         if (
-            (token := self.expect('False\\b'))
+            (token := self.expect(r'False\b'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
     @memoize
     def start_stre_q(self) -> Optional[Any]:
-        # start_stre_q: ''
+        # start_stre_q: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _stre_level . append ( '"' )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\042' )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_stre_a(self) -> Optional[Any]:
-        # start_stre_a: ''
+        # start_stre_a: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _stre_level . append ( "'" )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\047' )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_stre_qqq(self) -> Optional[Any]:
-        # start_stre_qqq: ''
+        # start_stre_qqq: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _stre_level . append ( '"""' )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\042\042\042' )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_stre_aaa(self) -> Optional[Any]:
-        # start_stre_aaa: ''
+        # start_stre_aaa: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _stre_level . append ( "'''" )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\047\047\047' )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_stre_b(self) -> Optional[Any]:
-        # start_stre_b: ''
+        # start_stre_b: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _stre_level . append ( '}' )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _stre_level . append ( '\175' )];
         self._reset(mark)
         return None;
 
     @memoize
     def stre1(self) -> Optional[Any]:
-        # stre1: '.'
+        # stre1: r'.'
         mark = self._mark()
         if (
-            (token := self.expect('.'))
+            (token := self.expect(r'.'))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None;
         self._reset(mark)
         return None;
 
     @memoize
     def stre3(self) -> Optional[Any]:
-        # stre3: '...'
+        # stre3: r'...'
         mark = self._mark()
         if (
-            (token := self.expect('...'))
+            (token := self.expect(r'...'))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _stre_level . pop ( )] [0] if + token == char_parser . to_char_parser ( self ) . _stre_level [- 1] else None;
         self._reset(mark)
         return None;
 
@@ -1009,44 +1006,44 @@ class GeneratedParser(Parser):
         if (
             (stre1 := self.stre1())
         ):
-            return ( lambda stre1 : stre1 ) ( stre1 );
+            return stre1;
         self._reset(mark)
         if (
             (stre3 := self.stre3())
         ):
-            return ( lambda stre3 : stre3 ) ( stre3 );
+            return stre3;
         self._reset(mark)
         return None;
 
     @memoize
     def str_char(self) -> Optional[Any]:
-        # str_char: 'str\x00f' '\\{\\{' | 'str\x00f' '\\}\\}' | 'str\x00f' '\\{\\}' | 'str\x00f' '\\{' spaces f_expression (assign_token)? '(![ras])?' auto_generated_0__tmp_3 | 'str\x00' '\\\\\n' | 'str\x00' '\\\\\\\\' | 'str\x00' "\\\\'" | 'str\x00' '\\\\"' | 'str\x00R' '\\\\a' | 'str\x00R' '\\\\b' | 'str\x00R' '\\\\t' | 'str\x00R' '\\\\n' | 'str\x00R' '\\\\v' | 'str\x00R' '\\\\f' | 'str\x00R' '\\\\r' | 'str\x00R' '\\\\[0-7][0-7]?[0-7]?' | 'str\x00R' '\\\\x[0-9a-fA-F]{2}' | 'str\x00RB' '\\\\N\\{[^}]*\\}' | 'str\x00RB' '\\\\u[0-9a-fA-F]{4}' | 'str\x00RB' '\\\\U[0-9a-fA-F]{8}' | 'str\x00' '\\n' | 'str\x00B' '[^{}\\42\\47\\\\\\n]+' | 'str\x00b' '[^{}\\42\\47\\\\\\n]+' | 'str\x00b' '.' | 'str\x00B' '.'
+        # str_char: 'str\0f' '\\{\\{' | 'str\0f' '\\}\\}' | 'str\0f' '\\{\\}' | 'str\0f' r'\{' spaces f_expression assign_token? '(![ras])?' (r':' 'append_str\0f' start_stre_b str_end 'pop_str\0f' | r'\}') | 'str\0' '\\\\\n' | 'str\0' '\\\\\\\\' | 'str\0' '\\\\\47' | 'str\0' '\\\\\42' | 'str\0R' '\\\\a' | 'str\0R' '\\\\b' | 'str\0R' '\\\\t' | 'str\0R' '\\\\n' | 'str\0R' '\\\\v' | 'str\0R' '\\\\f' | 'str\0R' '\\\\r' | 'str\0R' '\\\\[0-7][0-7]?[0-7]?' | 'str\0R' '\\\\x[0-9a-fA-F]{2}' | 'str\0RB' '\\\\N\\{[^}]*\\}' | 'str\0RB' '\\\\u[0-9a-fA-F]{4}' | 'str\0RB' '\\\\U[0-9a-fA-F]{8}' | 'str\0' r'\n' | 'str\0B' r'[^{}\42\47\\\n]+' | 'str\0b' r'[^{}\42\47\\\n]+' | 'str\0b' r'.' | 'str\0B' r'.'
         mark = self._mark()
         if (
-            (self.expect('str\x00f'))
+            (self.expect('str\0f'))
             and
             (token := self.expect('\\{\\{'))
         ):
-            return ( lambda token : token ( '{' ) ) ( token );
+            return token ( '\173' );
         self._reset(mark)
         if (
-            (self.expect('str\x00f'))
+            (self.expect('str\0f'))
             and
             (token := self.expect('\\}\\}'))
         ):
-            return ( lambda token : token ( '}' ) ) ( token );
+            return token ( '\175' );
         self._reset(mark)
         if (
-            (self.expect('str\x00f'))
+            (self.expect('str\0f'))
             and
             (self.expect('\\{\\}'))
         ):
-            return ( lambda : None ) ( );
+            return None;
         self._reset(mark)
         if (
-            (self.expect('str\x00f'))
+            (self.expect('str\0f'))
             and
-            (a := self.expect('\\{'))
+            (a := self.expect(r'\{'))
             and
             (value_begin := self.spaces())
             and
@@ -1056,156 +1053,156 @@ class GeneratedParser(Parser):
             and
             (conversion := self.expect('(![ras])?'))
             and
-            (format_spec := self.auto_generated_0__tmp_3())
+            (format_spec := self._tmp_3())
         ):
-            return ( lambda a , value_begin , value , as_token , conversion , format_spec : [ast . Constant ( token = a , value = char_parser . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = None if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] * 0 for values in [+ format_spec [3]]] [0] [: : - 1] ) )] [not as_token :] ) ( a , value_begin , value , as_token , conversion , format_spec );
+            return [ast . Constant ( token = a , value = char_parser . to_char_parser ( self ) . _tokenizer . text [value_begin . pos : conversion . pos] if as_token else '' , ) , ast . FormattedValue ( token = a , value = value , conversion = ord ( conversion ( ) [- 1] ) if + conversion else 114 if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) and as_token else - 1 , format_spec = ( None if isinstance ( format_spec , char_parser . to_char_parser ( self ) . _token ) else ast . JoinedStr ( token = a , values = [values if not values or isinstance ( values [- 1] , ast . Constant ) else values + [ast . Constant ( token = format_spec [0] , value = '' )] * 0 for values in [+ format_spec [3]]] [0] [: : - 1] ) ) )] [not as_token :];
         self._reset(mark)
         if (
-            (self.expect('str\x00'))
+            (self.expect('str\0'))
             and
             (token := self.expect('\\\\\n'))
         ):
-            return ( lambda token : token ( '' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ) ( token );
+            return token ( '' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
-            (self.expect('str\x00'))
+            (self.expect('str\0'))
             and
             (token := self.expect('\\\\\\\\'))
         ):
-            return ( lambda token : token ( '\\' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ) ( token );
+            return token ( '\\' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
-            (self.expect('str\x00'))
+            (self.expect('str\0'))
             and
-            (token := self.expect("\\\\'"))
+            (token := self.expect('\\\\\47'))
         ):
-            return ( lambda token : token ( "'" ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( "\\'" ) ) ( token );
+            return token ( "\47" ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\47" );
         self._reset(mark)
         if (
-            (self.expect('str\x00'))
+            (self.expect('str\0'))
             and
-            (token := self.expect('\\\\"'))
+            (token := self.expect('\\\\\42'))
         ):
-            return ( lambda token : token ( '"' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( '\\"' ) ) ( token );
+            return token ( '\42' ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ( "\\\42" );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\a'))
         ):
-            return ( lambda token : token ( '\x07' ) ) ( token );
+            return token ( '\7' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\b'))
         ):
-            return ( lambda token : token ( '\x08' ) ) ( token );
+            return token ( '\10' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\t'))
         ):
-            return ( lambda token : token ( '\t' ) ) ( token );
+            return token ( '\11' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\n'))
         ):
-            return ( lambda token : token ( '\n' ) ) ( token );
+            return token ( '\12' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\v'))
         ):
-            return ( lambda token : token ( '\x0b' ) ) ( token );
+            return token ( '\13' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\f'))
         ):
-            return ( lambda token : token ( '\x0c' ) ) ( token );
+            return token ( '\14' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\r'))
         ):
-            return ( lambda token : token ( '\r' ) ) ( token );
+            return token ( '\15' );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\[0-7][0-7]?[0-7]?'))
         ):
-            return ( lambda token : token ( chr ( [c if 'b' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else c % 256 for c in [int ( token ( ) [1 :] , 8 )]] [0] ) ) ) ( token );
+            return token ( chr ( [c if 'b' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else c % 256 for c in [int ( token ( ) [1 :] , 8 )]] [0] ) );
         self._reset(mark)
         if (
-            (self.expect('str\x00R'))
+            (self.expect('str\0R'))
             and
             (token := self.expect('\\\\x[0-9a-fA-F]{2}'))
         ):
-            return ( lambda token : token ( chr ( int ( token ( ) [2 :] , 16 ) ) ) ) ( token );
+            return token ( chr ( int ( token ( ) [2 :] , 16 ) ) );
         self._reset(mark)
         if (
-            (self.expect('str\x00RB'))
+            (self.expect('str\0RB'))
             and
             (token := self.expect('\\\\N\\{[^}]*\\}'))
         ):
-            return ( lambda token : [None if c is None else token ( c ) for c in [char_parser . to_char_parser ( self ) . _unicode_lookup ( token ( ) [3 : - 1] )]] [0] ) ( token );
+            return [None if c is None else token ( c ) for c in [char_parser . to_char_parser ( self ) . _unicode_lookup ( token ( ) [3 : - 1] )]] [0];
         self._reset(mark)
         if (
-            (self.expect('str\x00RB'))
+            (self.expect('str\0RB'))
             and
             (token := self.expect('\\\\u[0-9a-fA-F]{4}'))
         ):
-            return ( lambda token : token ( chr ( int ( token ( ) [2 :] , 16 ) ) ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ) ( token );
+            return token ( chr ( int ( token ( ) [2 :] , 16 ) ) ) if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
-            (self.expect('str\x00RB'))
+            (self.expect('str\0RB'))
             and
             (token := self.expect('\\\\U[0-9a-fA-F]{8}'))
         ):
-            return ( lambda token : [token ( chr ( c ) ) if c < 1114112 else None for c in [int ( token ( ) [2 :] , 16 )]] [0] if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token ) ( token );
+            return [token ( chr ( c ) ) if c < 0x110000 else None for c in [int ( token ( ) [2 :] , 16 )]] [0] if 'r' not in char_parser . to_char_parser ( self ) . _str_level [- 1] else token;
         self._reset(mark)
         if (
-            (self.expect('str\x00'))
+            (self.expect('str\0'))
             and
-            (token := self.expect('\\n'))
+            (token := self.expect(r'\n'))
         ):
-            return ( lambda token : token if len ( char_parser . to_char_parser ( self ) . _stre_level [- 1] ) == 3 else char_parser . to_char_parser ( self ) . _error ( ) ) ( token );
+            return token if len ( char_parser . to_char_parser ( self ) . _stre_level [- 1] ) == 3 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         if (
-            (self.expect('str\x00B'))
+            (self.expect('str\0B'))
             and
-            (token := self.expect('[^{}\\42\\47\\\\\\n]+'))
+            (token := self.expect(r'[^{}\42\47\\\n]+'))
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         if (
-            (self.expect('str\x00b'))
+            (self.expect('str\0b'))
             and
-            (token := self.expect('[^{}\\42\\47\\\\\\n]+'))
+            (token := self.expect(r'[^{}\42\47\\\n]+'))
         ):
-            return ( lambda token : token if all ( [len ( t . encode ( ) ) < 2 for t in + token] ) else None ) ( token );
+            return token if all ( [len ( t . encode ( ) ) < 2 for t in + token] ) else None;
         self._reset(mark)
         if (
-            (self.expect('str\x00b'))
+            (self.expect('str\0b'))
             and
-            (token := self.expect('.'))
+            (token := self.expect(r'.'))
         ):
-            return ( lambda token : token if all ( [len ( t . encode ( ) ) < 2 for t in + token] ) else None ) ( token );
+            return token if all ( [len ( t . encode ( ) ) < 2 for t in + token] ) else None;
         self._reset(mark)
         if (
-            (self.expect('str\x00B'))
+            (self.expect('str\0B'))
             and
-            (token := self.expect('.'))
+            (token := self.expect(r'.'))
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
@@ -1216,56 +1213,56 @@ class GeneratedParser(Parser):
         if (
             (self.stre())
         ):
-            return ( lambda : char_parser . to_char_parser ( self ) . _make_true ( [] ) ) ( );
+            return char_parser . to_char_parser ( self ) . _make_true ( [] );
         self._reset(mark)
         if (
             (a := self.str_char())
             and
             (b := self.str_end())
         ):
-            return ( lambda a , b : [b ( ) . extend ( a [: : - 1] ) if not isinstance ( a , char_parser . to_char_parser ( self ) . _token ) else b ( ) . append ( ast . Constant ( token = a , value = + a ) ) , b] [1] ) ( a , b );
+            return [b ( ) . extend ( a [: : - 1] ) if not isinstance ( a , char_parser . to_char_parser ( self ) . _token ) else b ( ) . append ( ast . Constant ( token = a , value = + a ) ) , b] [1];
         self._reset(mark)
         return None;
 
     @memoize
     def str_content(self) -> Optional[Any]:
-        # str_content: "'''" start_stre_aaa str_end | '"""' start_stre_qqq str_end | "'" start_stre_a str_end | '"' start_stre_q str_end
+        # str_content: '\x27\x27\x27' start_stre_aaa str_end | '\x22\x22\x22' start_stre_qqq str_end | '\x27' start_stre_a str_end | '\x22' start_stre_q str_end
         mark = self._mark()
         if (
-            (self.expect("'''"))
+            (self.expect('\x27\x27\x27'))
             and
             (self.start_stre_aaa())
             and
             (data := self.str_end())
         ):
-            return ( lambda data : data ) ( data );
+            return data;
         self._reset(mark)
         if (
-            (self.expect('"""'))
+            (self.expect('\x22\x22\x22'))
             and
             (self.start_stre_qqq())
             and
             (data := self.str_end())
         ):
-            return ( lambda data : data ) ( data );
+            return data;
         self._reset(mark)
         if (
-            (self.expect("'"))
+            (self.expect('\x27'))
             and
             (self.start_stre_a())
             and
             (data := self.str_end())
         ):
-            return ( lambda data : data ) ( data );
+            return data;
         self._reset(mark)
         if (
-            (self.expect('"'))
+            (self.expect('\x22'))
             and
             (self.start_stre_q())
             and
             (data := self.str_end())
         ):
-            return ( lambda data : data ) ( data );
+            return data;
         self._reset(mark)
         return None;
 
@@ -1276,7 +1273,7 @@ class GeneratedParser(Parser):
         if (
             (data := self.str_content())
         ):
-            return ( lambda data : char_parser . to_char_parser ( self ) . _make_true ( data ( ) [: : - 1] ) ) ( data );
+            return char_parser . to_char_parser ( self ) . _make_true ( data ( ) [: : - 1] );
         self._reset(mark)
         return None;
 
@@ -1287,7 +1284,7 @@ class GeneratedParser(Parser):
         if (
             (data := self.formatted_str_data())
         ):
-            return ( lambda data : char_parser . to_char_parser ( self ) . _make_true ( '' . join ( [n . value for n in + data] ) ) ) ( data );
+            return char_parser . to_char_parser ( self ) . _make_true ( '' . join ( [n . value for n in + data] ) );
         self._reset(mark)
         return None;
 
@@ -1298,170 +1295,169 @@ class GeneratedParser(Parser):
         if (
             (data := self.simple_str_data())
         ):
-            return ( lambda data : char_parser . to_char_parser ( self ) . _make_true ( bytes ( [* map ( ord , + data )] ) ) ) ( data );
+            return char_parser . to_char_parser ( self ) . _make_true ( bytes ( [* map ( ord , + data )] ) );
         self._reset(mark)
         return None;
 
     @memoize
     def str_with_prefix(self) -> Optional[Any]:
-        # str_with_prefix: '[Rr][Bb]|[Bb][Rr]' 'append_str\x00br' (byte_str_data)? 'pop_str\x00br' | '[Ff][Rr]|[Rr][Ff]' 'append_str\x00fr' (formatted_str_data)? 'pop_str\x00fr' | '[Bb]' 'append_str\x00b' (byte_str_data)? 'pop_str\x00b' | '[fF]' 'append_str\x00f' (formatted_str_data)? 'pop_str\x00f' | '[rR]' 'append_str\x00r' (simple_str_data)? 'pop_str\x00r' | '[Uu]?' 'append_str\x00' (simple_str_data)? 'pop_str\x00'
+        # str_with_prefix: r'[Rr][Bb]|[Bb][Rr]' 'append_str\0br' byte_str_data? 'pop_str\0br' | r'[Ff][Rr]|[Rr][Ff]' 'append_str\0fr' formatted_str_data? 'pop_str\0fr' | r'[Bb]' 'append_str\0b' byte_str_data? 'pop_str\0b' | r'[fF]' 'append_str\0f' formatted_str_data? 'pop_str\0f' | r'[rR]' 'append_str\0r' simple_str_data? 'pop_str\0r' | r'[Uu]?' 'append_str\0' simple_str_data? 'pop_str\0'
         mark = self._mark()
         if (
-            (token := self.expect('[Rr][Bb]|[Bb][Rr]'))
+            (token := self.expect(r'[Rr][Bb]|[Bb][Rr]'))
             and
-            (self.expect('append_str\x00br'))
-            and
-            (data := self.byte_str_data(),)
-            and
-            (self.expect('pop_str\x00br'))
-        ):
-            return ( lambda token , data : ast . Constant ( token = token , value = + data ) if data else None ) ( token , data );
-        self._reset(mark)
-        if (
-            (token := self.expect('[Ff][Rr]|[Rr][Ff]'))
-            and
-            (self.expect('append_str\x00fr'))
-            and
-            (data := self.formatted_str_data(),)
-            and
-            (self.expect('pop_str\x00fr'))
-        ):
-            return ( lambda token , data : ast . JoinedStr ( token = token , values = + data ) if data else None ) ( token , data );
-        self._reset(mark)
-        if (
-            (token := self.expect('[Bb]'))
-            and
-            (self.expect('append_str\x00b'))
+            (self.expect('append_str\0br'))
             and
             (data := self.byte_str_data(),)
             and
-            (self.expect('pop_str\x00b'))
+            (self.expect('pop_str\0br'))
         ):
-            return ( lambda token , data : ast . Constant ( token = token , value = + data ) if data else None ) ( token , data );
+            return ast . Constant ( token = token , value = + data ) if data else None;
         self._reset(mark)
         if (
-            (token := self.expect('[fF]'))
+            (token := self.expect(r'[Ff][Rr]|[Rr][Ff]'))
             and
-            (self.expect('append_str\x00f'))
+            (self.expect('append_str\0fr'))
             and
             (data := self.formatted_str_data(),)
             and
-            (self.expect('pop_str\x00f'))
+            (self.expect('pop_str\0fr'))
         ):
-            return ( lambda token , data : ast . JoinedStr ( token = token , values = + data ) if data else None ) ( token , data );
+            return ast . JoinedStr ( token = token , values = + data ) if data else None;
         self._reset(mark)
         if (
-            (token := self.expect('[rR]'))
+            (token := self.expect(r'[Bb]'))
             and
-            (self.expect('append_str\x00r'))
+            (self.expect('append_str\0b'))
+            and
+            (data := self.byte_str_data(),)
+            and
+            (self.expect('pop_str\0b'))
+        ):
+            return ast . Constant ( token = token , value = + data ) if data else None;
+        self._reset(mark)
+        if (
+            (token := self.expect(r'[fF]'))
+            and
+            (self.expect('append_str\0f'))
+            and
+            (data := self.formatted_str_data(),)
+            and
+            (self.expect('pop_str\0f'))
+        ):
+            return ast . JoinedStr ( token = token , values = + data ) if data else None;
+        self._reset(mark)
+        if (
+            (token := self.expect(r'[rR]'))
+            and
+            (self.expect('append_str\0r'))
             and
             (data := self.simple_str_data(),)
             and
-            (self.expect('pop_str\x00r'))
+            (self.expect('pop_str\0r'))
         ):
-            return ( lambda token , data : ast . Constant ( token = token , value = + data ) if data else None ) ( token , data );
+            return ast . Constant ( token = token , value = + data ) if data else None;
         self._reset(mark)
         if (
-            (token := self.expect('[Uu]?'))
+            (token := self.expect(r'[Uu]?'))
             and
-            (self.expect('append_str\x00'))
+            (self.expect('append_str\0'))
             and
             (data := self.simple_str_data(),)
             and
-            (self.expect('pop_str\x00'))
+            (self.expect('pop_str\0'))
         ):
-            return ( lambda token , data : ast . Constant ( token = token , value = + data , kind = + token if + token else None ) if data else None ) ( token , data );
+            return ast . Constant ( token = token , value = + data , kind = + token if + token else None ) if data else None;
         self._reset(mark)
         return None;
 
     @memoize
     def stringliteral(self) -> Optional[Any]:
-        # stringliteral: auto_generated_0__loop1_4
-        # nullable=True
+        # stringliteral: ((str_with_prefix spaces))+
         mark = self._mark()
         if (
-            (tokens := self.auto_generated_0__loop1_4())
+            (tokens := self._loop1_4())
         ):
-            return ( lambda tokens : char_parser . to_char_parser ( self ) . _join_str ( [token [0] for token in tokens] ) ) ( tokens );
+            return char_parser . to_char_parser ( self ) . _join_str ( [token [0] for token in tokens] );
         self._reset(mark)
         return None;
 
     @memoize
     def integer(self) -> Optional[Any]:
-        # integer: '[1-9][_0-9]*' | '0[bB][_01]+' | '0[oO][_0-7]+' | '0[xX][_0-9a-fA-F]+' | '0[_0]*'
+        # integer: r'[1-9][_0-9]*' | r'0[bB][_01]+' | r'0[oO][_0-7]+' | r'0[xX][_0-9a-fA-F]+' | r'0[_0]*'
         mark = self._mark()
         if (
-            (literal := self.expect('[1-9][_0-9]*'))
+            (literal := self.expect(r'[1-9][_0-9]*'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         if (
-            (literal := self.expect('0[bB][_01]+'))
+            (literal := self.expect(r'0[bB][_01]+'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         if (
-            (literal := self.expect('0[oO][_0-7]+'))
+            (literal := self.expect(r'0[oO][_0-7]+'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         if (
-            (literal := self.expect('0[xX][_0-9a-fA-F]+'))
+            (literal := self.expect(r'0[xX][_0-9a-fA-F]+'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         if (
-            (literal := self.expect('0[_0]*'))
+            (literal := self.expect(r'0[_0]*'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         return None;
 
     @memoize
     def digitpart(self) -> Optional[Any]:
-        # digitpart: '[0-9][_0-9]*'
+        # digitpart: r'[0-9][_0-9]*'
         mark = self._mark()
         if (
-            (literal := self.expect('[0-9][_0-9]*'))
+            (literal := self.expect(r'[0-9][_0-9]*'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         return None;
 
     @memoize
     def pointfloat(self) -> Optional[Any]:
-        # pointfloat: (digitpart)? '\\.' digitpart | digitpart '\\.'
+        # pointfloat: digitpart? r'\.' digitpart | digitpart r'\.'
         mark = self._mark()
         if (
             (a := self.digitpart(),)
             and
-            (b := self.expect('\\.'))
+            (b := self.expect(r'\.'))
             and
             (c := self.digitpart())
         ):
-            return ( lambda a , b , c : b + c if a is None else a + b + c ) ( a , b , c );
+            return b + c if a is None else a + b + c;
         self._reset(mark)
         if (
             (a := self.digitpart())
             and
-            (b := self.expect('\\.'))
+            (b := self.expect(r'\.'))
         ):
-            return ( lambda a , b : a + b ) ( a , b );
+            return a + b;
         self._reset(mark)
         return None;
 
     @memoize
     def exponentfloat(self) -> Optional[Any]:
-        # exponentfloat: auto_generated_0__tmp_5 '[eE][+-]?' digitpart
+        # exponentfloat: (pointfloat | digitpart) r'[eE][+-]?' digitpart
         mark = self._mark()
         if (
-            (a := self.auto_generated_0__tmp_5())
+            (a := self._tmp_5())
             and
-            (b := self.expect('[eE][+-]?'))
+            (b := self.expect(r'[eE][+-]?'))
             and
             (c := self.digitpart())
         ):
-            return ( lambda a , b , c : a + b + c ) ( a , b , c );
+            return a + b + c;
         self._reset(mark)
         return None;
 
@@ -1472,25 +1468,25 @@ class GeneratedParser(Parser):
         if (
             (exponentfloat := self.exponentfloat())
         ):
-            return ( lambda exponentfloat : exponentfloat ) ( exponentfloat );
+            return exponentfloat;
         self._reset(mark)
         if (
             (pointfloat := self.pointfloat())
         ):
-            return ( lambda pointfloat : pointfloat ) ( pointfloat );
+            return pointfloat;
         self._reset(mark)
         return None;
 
     @memoize
     def imagnumber(self) -> Optional[Any]:
-        # imagnumber: auto_generated_0__tmp_6 '[jJ]'
+        # imagnumber: (floatnumber | digitpart) r'[jJ]'
         mark = self._mark()
         if (
-            (a := self.auto_generated_0__tmp_6())
+            (a := self._tmp_6())
             and
-            (b := self.expect('[jJ]'))
+            (b := self.expect(r'[jJ]'))
         ):
-            return ( lambda a , b : a + b ) ( a , b );
+            return a + b;
         self._reset(mark)
         return None;
 
@@ -1501,75 +1497,75 @@ class GeneratedParser(Parser):
         if (
             (stringliteral := self.stringliteral())
         ):
-            return ( lambda stringliteral : stringliteral ) ( stringliteral );
+            return stringliteral;
         self._reset(mark)
         if (
             (token := self.imagnumber())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = complex ( + token ) ) ) ( token );
+            return ast . Constant ( token = token , value = complex ( + token ) );
         self._reset(mark)
         if (
             (token := self.floatnumber())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = float ( + token ) ) ) ( token );
+            return ast . Constant ( token = token , value = float ( + token ) );
         self._reset(mark)
         if (
             (token := self.integer())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = int ( + token , 0 ) ) ) ( token );
+            return ast . Constant ( token = token , value = int ( + token , 0 ) );
         self._reset(mark)
         return None;
 
     @memoize
     def constant(self) -> Optional[Any]:
-        # constant: none_token spaces | '\\.\\.\\.' spaces | false_token spaces | true_token spaces
+        # constant: none_token spaces | r'\.\.\.' spaces | false_token spaces | true_token spaces
         mark = self._mark()
         if (
             (token := self.none_token())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = None ) ) ( token );
+            return ast . Constant ( token = token , value = None );
         self._reset(mark)
         if (
-            (token := self.expect('\\.\\.\\.'))
+            (token := self.expect(r'\.\.\.'))
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = ... ) ) ( token );
+            return ast . Constant ( token = token , value = ... );
         self._reset(mark)
         if (
             (token := self.false_token())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = False ) ) ( token );
+            return ast . Constant ( token = token , value = False );
         self._reset(mark)
         if (
             (token := self.true_token())
             and
             (self.spaces())
         ):
-            return ( lambda token : ast . Constant ( token = token , value = True ) ) ( token );
+            return ast . Constant ( token = token , value = True );
         self._reset(mark)
         return None;
 
     @memoize
     def identifier(self) -> Optional[Any]:
-        # identifier: '[^\\W0-9]\\w*' spaces
+        # identifier: r'[^\W0-9]\w*' spaces
         mark = self._mark()
         if (
-            (token := self.expect('[^\\W0-9]\\w*'))
+            (token := self.expect(r'[^\W0-9]\w*'))
             and
             (self.spaces())
         ):
-            return ( lambda token : token ) ( token );
+            return token;
         self._reset(mark)
         return None;
 
@@ -1580,7 +1576,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.identifier())
         ):
-            return ( lambda token : ast . Name ( token = token , id = + token , ctx = ast . Load ( token = token ) ) ) ( token );
+            return ast . Name ( token = token , id = + token , ctx = ast . Load ( token = token ) );
         self._reset(mark)
         return None;
 
@@ -1591,7 +1587,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.identifier())
         ):
-            return ( lambda token : ast . Name ( token = token , id = + token , ctx = ast . Store ( token = token ) ) ) ( token );
+            return ast . Name ( token = token , id = + token , ctx = ast . Store ( token = token ) );
         self._reset(mark)
         return None;
 
@@ -1602,7 +1598,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.identifier())
         ):
-            return ( lambda token : ast . Name ( token = token , id = + token , ctx = ast . Del ( token = token ) ) ) ( token );
+            return ast . Name ( token = token , id = + token , ctx = ast . Del ( token = token ) );
         self._reset(mark)
         return None;
 
@@ -1615,7 +1611,7 @@ class GeneratedParser(Parser):
             and
             (attr := self.identifier())
         ):
-            return ( lambda attr : lambda value : ast . Attribute ( token = value . token , value = value , attr = + attr , ctx = ast . Load ( token = value . token ) ) ) ( attr );
+            return lambda value : ast . Attribute ( token = value . token , value = value , attr = + attr , ctx = ast . Load ( token = value . token ) );
         self._reset(mark)
         return None;
 
@@ -1626,7 +1622,7 @@ class GeneratedParser(Parser):
         if (
             (value := self.primary())
         ):
-            return ( lambda value : ast . Attribute ( token = value . token , value = value . value , attr = value . attr , ctx = ast . Store ( token = value . token ) ) if isinstance ( value , ast . Attribute ) else None ) ( value );
+            return ast . Attribute ( token = value . token , value = value . value , attr = value . attr , ctx = ast . Store ( token = value . token ) ) if isinstance ( value , ast . Attribute ) else None;
         self._reset(mark)
         return None;
 
@@ -1637,13 +1633,13 @@ class GeneratedParser(Parser):
         if (
             (value := self.primary())
         ):
-            return ( lambda value : ast . Attribute ( token = value . token , value = value . value , attr = value . attr , ctx = ast . Del ( token = value . token ) ) if isinstance ( value , ast . Attribute ) else None ) ( value );
+            return ast . Attribute ( token = value . token , value = value . value , attr = value . attr , ctx = ast . Del ( token = value . token ) ) if isinstance ( value , ast . Attribute ) else None;
         self._reset(mark)
         return None;
 
     @memoize
     def sub_item(self) -> Optional[Any]:
-        # sub_item: (expression)? colon_token (expression)? (auto_generated_0__tmp_7)? | expression
+        # sub_item: expression? colon_token expression? [colon_token expression?] | expression
         mark = self._mark()
         if (
             (lower := self.expression(),)
@@ -1652,31 +1648,31 @@ class GeneratedParser(Parser):
             and
             (upper := self.expression(),)
             and
-            (step := self.auto_generated_0__tmp_7(),)
+            (step := self._tmp_7(),)
         ):
-            return ( lambda lower , token , upper , step : ast . Slice ( token = token , lower = lower , upper = upper , step = step [1] if step else None ) ) ( lower , token , upper , step );
+            return ast . Slice ( token = token , lower = lower , upper = upper , step = step [1] if step else None );
         self._reset(mark)
         if (
             (expression := self.expression())
         ):
-            return ( lambda expression : expression ) ( expression );
+            return expression;
         self._reset(mark)
         return None;
 
     @memoize
     def get_subscription_suffix(self) -> Optional[Any]:
-        # get_subscription_suffix: left_bracket_token auto_generated_0__gather_8 (comma_token)? right_bracket_token
+        # get_subscription_suffix: left_bracket_token comma_token.sub_item+ comma_token? right_bracket_token
         mark = self._mark()
         if (
             (self.left_bracket_token())
             and
-            (slices := self.auto_generated_0__gather_8())
+            (slices := self._gather_8())
             and
             (tc := self.comma_token(),)
             and
             (self.right_bracket_token())
         ):
-            return ( lambda slices , tc : lambda value : ast . Subscript ( token = value . token , value = value , slice = ast . Tuple ( token = value . token , elts = slices , ctx = ast . Load ( token = value . token ) ) if len ( slices ) != 1 or tc else slices [0] , ctx = ast . Load ( token = value . token ) ) ) ( slices , tc );
+            return lambda value : ast . Subscript ( token = value . token , value = value , slice = ast . Tuple ( token = value . token , elts = slices , ctx = ast . Load ( token = value . token ) ) if len ( slices ) != 1 or tc else slices [0] , ctx = ast . Load ( token = value . token ) );
         self._reset(mark)
         return None;
 
@@ -1687,7 +1683,7 @@ class GeneratedParser(Parser):
         if (
             (value := self.primary())
         ):
-            return ( lambda value : ast . Subscript ( token = value . token , value = value . value , slice = value . slice , ctx = ast . Store ( token = value . token ) ) if isinstance ( value , ast . Subscript ) else None ) ( value );
+            return ast . Subscript ( token = value . token , value = value . value , slice = value . slice , ctx = ast . Store ( token = value . token ) ) if isinstance ( value , ast . Subscript ) else None;
         self._reset(mark)
         return None;
 
@@ -1698,7 +1694,7 @@ class GeneratedParser(Parser):
         if (
             (value := self.primary())
         ):
-            return ( lambda value : ast . Subscript ( token = value . token , value = value . value , slice = value . slice , ctx = ast . Del ( token = value . token ) ) if isinstance ( value , ast . Subscript ) else None ) ( value );
+            return ast . Subscript ( token = value . token , value = value . value , slice = value . slice , ctx = ast . Del ( token = value . token ) ) if isinstance ( value , ast . Subscript ) else None;
         self._reset(mark)
         return None;
 
@@ -1713,7 +1709,7 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda value : value ) ( value );
+            return value;
         self._reset(mark)
         if (
             (self.left_paren_token())
@@ -1722,19 +1718,18 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda value : value ) ( value );
+            return value;
         self._reset(mark)
         return None;
 
     @memoize
     def comp_for(self) -> Optional[Any]:
-        # comp_for: auto_generated_0__loop1_10
-        # nullable=True
+        # comp_for: ((async_token? for_token set_multiple_targets in_token ready_to_if_expr ((if_token ready_to_if_expr))*))+
         mark = self._mark()
         if (
-            (a := self.auto_generated_0__loop1_10())
+            (a := self._loop1_10())
         ):
-            return ( lambda a : char_parser . to_char_parser ( self ) . _make_true ( [ast . comprehension ( token = a [1] , target = a [2] , iter = a [4] , ifs = [a [1] for a in a [5]] if a [5] else [] , is_async = + bool ( a [0] ) ) if not a [0] or char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) for a in a] ) ) ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( [ast . comprehension ( token = a [1] , target = a [2] , iter = a [4] , ifs = [a [1] for a in a [5]] if a [5] else [] , is_async = + bool ( a [0] ) , ) if not a [0] or char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) for a in a] );
         self._reset(mark)
         return None;
 
@@ -1745,40 +1740,40 @@ class GeneratedParser(Parser):
         if (
             (walrus_expression := self.walrus_expression())
         ):
-            return ( lambda walrus_expression : walrus_expression ) ( walrus_expression );
+            return walrus_expression;
         self._reset(mark)
         if (
             (self.star_token())
             and
             (value := self.ready_to_be_starred_expr())
         ):
-            return ( lambda value : ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) ) ) ( value );
+            return ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def display_content(self) -> Optional[Any]:
-        # display_content: walrus_expression comp_for | auto_generated_0__gather_11 (comma_token)?
+        # display_content: walrus_expression comp_for | comma_token.display_item+ comma_token?
         mark = self._mark()
         if (
             (walrus_expression := self.walrus_expression())
             and
             (comp_for := self.comp_for())
         ):
-            return ( lambda walrus_expression , comp_for : [walrus_expression , comp_for] ) ( walrus_expression , comp_for );
+            return [walrus_expression, comp_for];
         self._reset(mark)
         if (
-            (auto_generated_0__gather_11 := self.auto_generated_0__gather_11())
+            (_gather_11 := self._gather_11())
             and
             (opt := self.comma_token(),)
         ):
-            return ( lambda _gather_11 , opt : [_gather_11 , opt] ) ( auto_generated_0__gather_11 , opt );
+            return [_gather_11, opt];
         self._reset(mark)
         return None;
 
     @memoize
     def tuple_display(self) -> Optional[Any]:
-        # tuple_display: left_paren_token (display_content)? right_paren_token
+        # tuple_display: left_paren_token display_content? right_paren_token
         mark = self._mark()
         if (
             (token := self.left_paren_token())
@@ -1787,13 +1782,13 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda token , content : None if content and ( not content [1] ) and ( len ( content [0] ) == 1 ) else ast . GeneratorExp ( token = token , elt = content [0] , generators = + content [1] ) if content and content [1] and ( + content [1] != ',' ) else ast . Tuple ( token = token , elts = content [0] if content else [] , ctx = ast . Load ( token = token ) ) ) ( token , content );
+            return None if content and not content [1] and len ( content [0] ) == 1 else ast . GeneratorExp ( token = token , elt = content [0] , generators = + content [1] ) if content and content [1] and + content [1] != ',' else ast . Tuple ( token = token , elts = content [0] if content else [] , ctx = ast . Load ( token = token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def list_display(self) -> Optional[Any]:
-        # list_display: left_bracket_token (display_content)? right_bracket_token
+        # list_display: left_bracket_token display_content? right_bracket_token
         mark = self._mark()
         if (
             (token := self.left_bracket_token())
@@ -1802,7 +1797,7 @@ class GeneratedParser(Parser):
             and
             (self.right_bracket_token())
         ):
-            return ( lambda token , content : ast . ListComp ( token = token , elt = content [0] , generators = + content [1] ) if content and content [1] and ( + content [1] != ',' ) else ast . List ( token = token , elts = content [0] if content else [] , ctx = ast . Load ( token = token ) ) ) ( token , content );
+            return ast . ListComp ( token = token , elt = content [0] , generators = + content [1] ) if content and content [1] and + content [1] != ',' else ast . List ( token = token , elts = content [0] if content else [] , ctx = ast . Load ( token = token ) );
         self._reset(mark)
         return None;
 
@@ -1817,7 +1812,7 @@ class GeneratedParser(Parser):
             and
             (self.right_brace_token())
         ):
-            return ( lambda token , content : ast . SetComp ( token = token , elt = content [0] , generators = + content [1] ) if content [1] and + content [1] != ',' else ast . Set ( token = token , elts = content [0] if content else [] ) ) ( token , content );
+            return ast . SetComp ( token = token , elt = content [0] , generators = + content [1] ) if content [1] and + content [1] != ',' else ast . Set ( token = token , elts = content [0] if content else [] );
         self._reset(mark)
         return None;
 
@@ -1832,20 +1827,20 @@ class GeneratedParser(Parser):
             and
             (value := self.expression())
         ):
-            return ( lambda key , value : [key , value] ) ( key , value );
+            return [key , value];
         self._reset(mark)
         if (
             (self.starstar_token())
             and
             (value := self.ready_to_be_starred_expr())
         ):
-            return ( lambda value : [None , value] ) ( value );
+            return [None , value];
         self._reset(mark)
         return None;
 
     @memoize
     def dict_display_content(self) -> Optional[Any]:
-        # dict_display_content: expression colon_token expression comp_for | auto_generated_0__gather_13 (comma_token)?
+        # dict_display_content: expression colon_token expression comp_for | comma_token.dict_display_item+ comma_token?
         mark = self._mark()
         if (
             (expression := self.expression())
@@ -1856,20 +1851,20 @@ class GeneratedParser(Parser):
             and
             (comp_for := self.comp_for())
         ):
-            return ( lambda expression , colon_token , expression_1 , comp_for : [expression , colon_token , expression_1 , comp_for] ) ( expression , colon_token , expression_1 , comp_for );
+            return [expression, colon_token, expression_1, comp_for];
         self._reset(mark)
         if (
-            (auto_generated_0__gather_13 := self.auto_generated_0__gather_13())
+            (_gather_13 := self._gather_13())
             and
             (opt := self.comma_token(),)
         ):
-            return ( lambda _gather_13 , opt : [_gather_13 , opt] ) ( auto_generated_0__gather_13 , opt );
+            return [_gather_13, opt];
         self._reset(mark)
         return None;
 
     @memoize
     def dict_display(self) -> Optional[Any]:
-        # dict_display: left_brace_token (dict_display_content)? right_brace_token
+        # dict_display: left_brace_token dict_display_content? right_brace_token
         mark = self._mark()
         if (
             (token := self.left_brace_token())
@@ -1878,7 +1873,7 @@ class GeneratedParser(Parser):
             and
             (self.right_brace_token())
         ):
-            return ( lambda token , content : ast . Dict ( token = token , keys = [] , values = [] ) if not content else ast . Dict ( token = token , ** dict ( zip ( 'keys values' . split ( ) , map ( list , zip ( * content [0] ) ) ) ) ) if len ( content ) == 2 else ast . DictComp ( token = token , key = content [0] , value = content [2] , generators = + content [3] ) ) ( token , content );
+            return ast . Dict ( token = token , keys = [] , values = [] ) if not content else ast . Dict ( token = token , ** dict ( zip ( 'keys values' . split ( ) , map ( list , zip ( * content [0] ) ) ) ) ) if len ( content ) == 2 else ast . DictComp ( token = token , key = content [0] , value = content [2] , generators = + content [3] );
         self._reset(mark)
         return None;
 
@@ -1893,54 +1888,54 @@ class GeneratedParser(Parser):
             and
             (value := self.expression())
         ):
-            return ( lambda arg , value : ast . keyword ( token = arg , arg = + arg , value = value ) ) ( arg , value );
+            return ast . keyword ( token = arg , arg = + arg , value = value );
         self._reset(mark)
         if (
             (self.starstar_token())
             and
             (value := self.expression())
         ):
-            return ( lambda value : ast . keyword ( token = value . token , value = value ) ) ( value );
+            return ast . keyword ( token = value . token , value = value );
         self._reset(mark)
         if (
             (self.star_token())
             and
             (value := self.expression())
         ):
-            return ( lambda value : ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) ) ) ( value );
+            return ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) );
         self._reset(mark)
         if (
             (walrus_expression := self.walrus_expression())
         ):
-            return ( lambda walrus_expression : walrus_expression ) ( walrus_expression );
+            return walrus_expression;
         self._reset(mark)
         return None;
 
     @memoize
     def call_args(self) -> Optional[Any]:
-        # call_args: '' (auto_generated_0__tmp_15)?
+        # call_args: '' [comma_token.call_arg+ comma_token?]
         mark = self._mark()
         if (
             (self.expect(''))
             and
-            (args := self.auto_generated_0__tmp_15(),)
+            (args := self._tmp_15(),)
         ):
-            return ( lambda args : dict ( args = [] , keywords = [] ) if not args else dict ( args = [arg for arg in args [0] if type ( arg ) != ast . keyword] , keywords = [arg for arg in args [0] if type ( arg ) == ast . keyword] ) if not any ( [isinstance ( arg1 , ast . keyword ) and ( not isinstance ( arg2 , ast . keyword | ast . Starred ) ) or ( isinstance ( arg1 , ast . keyword ) and arg1 . arg == None and ( not isinstance ( arg2 , ast . keyword ) ) ) for ( n , arg2 ) in enumerate ( args [0] ) for arg1 in args [0] [: n]] ) else None ) ( args );
+            return dict ( args = [] , keywords = [] ) if not args else dict ( args = [arg for arg in args [0] if type ( arg ) != ast . keyword] , keywords = [arg for arg in args [0] if type ( arg ) == ast . keyword] ) if not any ( [isinstance ( arg1 , ast . keyword ) and not isinstance ( arg2 , ast . keyword | ast . Starred ) or isinstance ( arg1 , ast . keyword ) and arg1 . arg == None and not isinstance ( arg2 , ast . keyword ) for n , arg2 in enumerate ( args [0] ) for arg1 in args [0] [: n]] ) else None;
         self._reset(mark)
         return None;
 
     @memoize
     def call_suffix(self) -> Optional[Any]:
-        # call_suffix: left_paren_token auto_generated_0__tmp_16 right_paren_token
+        # call_suffix: left_paren_token (walrus_expression comp_for | call_args) right_paren_token
         mark = self._mark()
         if (
             (token := self.left_paren_token())
             and
-            (args := self.auto_generated_0__tmp_16())
+            (args := self._tmp_16())
             and
             (self.right_paren_token())
         ):
-            return ( lambda token , args : lambda func : ast . Call ( token = token , func = func , args = [ast . GeneratorExp ( token = func . token , elt = args [0] , generators = + args [1] )] , keywords = [] ) if isinstance ( args , list ) else ast . Call ( token = token , func = func , args = args ['args'] , keywords = args ['keywords'] ) ) ( token , args );
+            return lambda func : ( ast . Call ( token = token , func = func , args = [ast . GeneratorExp ( token = func . token , elt = args [0] , generators = + args [1] )] , keywords = [] ) if isinstance ( args , list ) else ast . Call ( token = token , func = func , args = args ['args'] , keywords = args ['keywords'] ) );
         self._reset(mark)
         return None;
 
@@ -1951,17 +1946,17 @@ class GeneratedParser(Parser):
         if (
             (call_suffix := self.call_suffix())
         ):
-            return ( lambda call_suffix : call_suffix ) ( call_suffix );
+            return call_suffix;
         self._reset(mark)
         if (
             (get_subscription_suffix := self.get_subscription_suffix())
         ):
-            return ( lambda get_subscription_suffix : get_subscription_suffix ) ( get_subscription_suffix );
+            return get_subscription_suffix;
         self._reset(mark)
         if (
             (get_attributeref_suffix := self.get_attributeref_suffix())
         ):
-            return ( lambda get_attributeref_suffix : get_attributeref_suffix ) ( get_attributeref_suffix );
+            return get_attributeref_suffix;
         self._reset(mark)
         return None;
 
@@ -1972,81 +1967,81 @@ class GeneratedParser(Parser):
         if (
             (tuple_display := self.tuple_display())
         ):
-            return ( lambda tuple_display : tuple_display ) ( tuple_display );
+            return tuple_display;
         self._reset(mark)
         if (
             (list_display := self.list_display())
         ):
-            return ( lambda list_display : list_display ) ( list_display );
+            return list_display;
         self._reset(mark)
         if (
             (dict_display := self.dict_display())
         ):
-            return ( lambda dict_display : dict_display ) ( dict_display );
+            return dict_display;
         self._reset(mark)
         if (
             (set_display := self.set_display())
         ):
-            return ( lambda set_display : set_display ) ( set_display );
+            return set_display;
         self._reset(mark)
         if (
             (literal := self.literal())
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         if (
             (constant := self.constant())
         ):
-            return ( lambda constant : constant ) ( constant );
+            return constant;
         self._reset(mark)
         if (
             (get_name := self.get_name())
         ):
-            return ( lambda get_name : get_name ) ( get_name );
+            return get_name;
         self._reset(mark)
         if (
             (arithmetic_parentheses := self.arithmetic_parentheses())
         ):
-            return ( lambda arithmetic_parentheses : arithmetic_parentheses ) ( arithmetic_parentheses );
+            return arithmetic_parentheses;
         self._reset(mark)
         return None;
 
     @memoize
     def primary(self) -> Optional[Any]:
-        # primary: atom (suffix)*
+        # primary: atom suffix*
         mark = self._mark()
         if (
             (value := self.atom())
             and
-            (suffixes := self._loop0_1(),)
+            (suffixes := self._loop0_17(),)
         ):
-            return ( lambda value , suffixes : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda value , suffix : suffix ( value ) , suffixes , value ) ) ( value , suffixes );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda value , suffix : suffix ( value ) , suffixes , value , );
         self._reset(mark)
         return None;
 
     @memoize
     def await_expr(self) -> Optional[Any]:
-        # await_expr: (await_token)? primary
+        # await_expr: await_token? primary
         mark = self._mark()
         if (
             (new_node := self.await_token(),)
             and
             (value := self.primary())
         ):
-            return ( lambda new_node , value : ast . Await ( token = value . token , value = value ) if new_node else value ) ( new_node , value );
+            return ast . Await ( token = value . token , value = value ) if new_node else value;
         self._reset(mark)
         return None;
 
     @memoize
     def power(self) -> Optional[Any]:
-        # power: await_expr (auto_generated_0__tmp_18)?
+        # power: (await_expr) [starstar_token u_expr]
         mark = self._mark()
         if (
             (left := self.await_expr())
             and
-            (new_node := self.auto_generated_0__tmp_18(),)
+            (new_node := self._tmp_18(),)
         ):
-            return ( lambda left , new_node : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ new_node [0]] ( token = new_node [0] ) , right = new_node [1] ) if new_node else left ) ( left , new_node );
+            return ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ new_node [0]] ( token = new_node [0] ) , right = new_node [1] ) if new_node else left;
         self._reset(mark)
         return None;
 
@@ -2057,92 +2052,92 @@ class GeneratedParser(Parser):
         if (
             (power := self.power())
         ):
-            return ( lambda power : power ) ( power );
+            return power;
         self._reset(mark)
         if (
             (op := self.u_token())
             and
             (operand := self.u_expr())
         ):
-            return ( lambda op , operand : ast . UnaryOp ( token = operand . token , operand = operand , op = char_parser . to_char_parser ( self ) . _un_op_to_ast [+ op] ( token = op ) ) ) ( op , operand );
+            return ast . UnaryOp ( token = operand . token , operand = operand , op = char_parser . to_char_parser ( self ) . _un_op_to_ast [+ op] ( token = op ) );
         self._reset(mark)
         return None;
 
     @memoize
     def m_expr(self) -> Optional[Any]:
-        # m_expr: u_expr (auto_generated_0__tmp_98)*
+        # m_expr: u_expr ((m_token u_expr))*
         mark = self._mark()
         if (
             (left := self.u_expr())
             and
-            (right := self._loop0_2(),)
+            (right := self._loop0_19(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
     @memoize
     def a_expr(self) -> Optional[Any]:
-        # a_expr: m_expr (auto_generated_0__tmp_99)*
+        # a_expr: m_expr ((a_token m_expr))*
         mark = self._mark()
         if (
             (left := self.m_expr())
             and
-            (right := self._loop0_3(),)
+            (right := self._loop0_20(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
     @memoize
     def shift_expr(self) -> Optional[Any]:
-        # shift_expr: a_expr (auto_generated_0__tmp_100)*
+        # shift_expr: a_expr ((shift_token a_expr))*
         mark = self._mark()
         if (
             (left := self.a_expr())
             and
-            (right := self._loop0_4(),)
+            (right := self._loop0_21(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
     @memoize
     def and_expr(self) -> Optional[Any]:
-        # and_expr: shift_expr (auto_generated_0__tmp_101)*
+        # and_expr: shift_expr ((bit_and_token shift_expr))*
         mark = self._mark()
         if (
             (left := self.shift_expr())
             and
-            (right := self._loop0_5(),)
+            (right := self._loop0_22(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
     @memoize
     def xor_expr(self) -> Optional[Any]:
-        # xor_expr: and_expr (auto_generated_0__tmp_102)*
+        # xor_expr: and_expr ((bit_xor_token and_expr))*
         mark = self._mark()
         if (
             (left := self.and_expr())
             and
-            (right := self._loop0_6(),)
+            (right := self._loop0_23(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
     @memoize
     def or_expr(self) -> Optional[Any]:
-        # or_expr: xor_expr (auto_generated_0__tmp_103)*
+        # or_expr: xor_expr ((bit_or_token xor_expr))*
         mark = self._mark()
         if (
             (left := self.xor_expr())
             and
-            (right := self._loop0_7(),)
+            (right := self._loop0_24(),)
         ):
-            return ( lambda left , right : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left ) ) ( left , right );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda left , right : ast . BinOp ( token = left . token , left = left , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ right [0]] ( token = right [0] ) , right = right [1] ) , right , left );
         self._reset(mark)
         return None;
 
@@ -2153,45 +2148,45 @@ class GeneratedParser(Parser):
         if (
             (or_expr := self.or_expr())
         ):
-            return ( lambda or_expr : or_expr ) ( or_expr );
+            return or_expr;
         self._reset(mark)
         return None;
 
     @memoize
     def comp_operator(self) -> Optional[Any]:
-        # comp_operator: comp_token | is_token (not_token)? | (not_token)? in_token
+        # comp_operator: comp_token | is_token not_token? | not_token? in_token
         mark = self._mark()
         if (
             (op := self.comp_token())
         ):
-            return ( lambda op : char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ op] ( token = op ) ) ( op );
+            return char_parser . to_char_parser ( self ) . _bin_op_to_ast [+ op] ( token = op );
         self._reset(mark)
         if (
             (a := self.is_token())
             and
             (s := self.not_token(),)
         ):
-            return ( lambda a , s : ast . IsNot ( token = a ) if s else ast . Is ( token = a ) ) ( a , s );
+            return ast . IsNot ( token = a ) if s else ast . Is ( token = a );
         self._reset(mark)
         if (
             (s := self.not_token(),)
             and
             (a := self.in_token())
         ):
-            return ( lambda s , a : ast . NotIn ( token = a ) if s else ast . In ( token = a ) ) ( s , a );
+            return ast . NotIn ( token = a ) if s else ast . In ( token = a );
         self._reset(mark)
         return None;
 
     @memoize
     def comparison(self) -> Optional[Any]:
-        # comparison: ready_to_be_starred_expr (auto_generated_0__tmp_104)*
+        # comparison: ready_to_be_starred_expr ((comp_operator ready_to_be_starred_expr))*
         mark = self._mark()
         if (
             (left := self.ready_to_be_starred_expr())
             and
-            (new_node := self._loop0_8(),)
+            (new_node := self._loop0_25(),)
         ):
-            return ( lambda left , new_node : ast . Compare ( token = left . token , left = left , ops = [op for ( op , comparator ) in new_node] , comparators = [comparator for ( op , comparator ) in new_node] ) if new_node else left ) ( left , new_node );
+            return ast . Compare ( token = left . token , left = left , ops = [op for op , comparator in new_node] , comparators = [comparator for op , comparator in new_node] , ) if new_node else left;
         self._reset(mark)
         return None;
 
@@ -2204,38 +2199,38 @@ class GeneratedParser(Parser):
             and
             (operand := self.not_test())
         ):
-            return ( lambda operand : ast . UnaryOp ( token = operand . token , op = ast . Not ( token = operand . token ) , operand = operand ) ) ( operand );
+            return ast . UnaryOp ( token = operand . token , op = ast . Not ( token = operand . token ) , operand = operand );
         self._reset(mark)
         if (
             (comparison := self.comparison())
         ):
-            return ( lambda comparison : comparison ) ( comparison );
+            return comparison;
         self._reset(mark)
         return None;
 
     @memoize
     def and_test(self) -> Optional[Any]:
-        # and_test: not_test (auto_generated_0__tmp_105)*
+        # and_test: not_test ((and_token not_test))*
         mark = self._mark()
         if (
             (left := self.not_test())
             and
-            (right := self._loop0_9(),)
+            (right := self._loop0_26(),)
         ):
-            return ( lambda left , right : ast . BoolOp ( token = left . token , op = ast . And ( token = left . token ) , values = [left] + [value [1] for value in right] ) if right else left ) ( left , right );
+            return ast . BoolOp ( token = left . token , op = ast . And ( token = left . token ) , values = [left] + [value [1] for value in right] ) if right else left;
         self._reset(mark)
         return None;
 
     @memoize
     def or_test(self) -> Optional[Any]:
-        # or_test: and_test (auto_generated_0__tmp_106)*
+        # or_test: and_test ((or_token and_test))*
         mark = self._mark()
         if (
             (left := self.and_test())
             and
-            (right := self._loop0_10(),)
+            (right := self._loop0_27(),)
         ):
-            return ( lambda left , right : ast . BoolOp ( token = left . token , op = ast . Or ( token = left . token ) , values = [left] + [value [1] for value in right] ) if right else left ) ( left , right );
+            return ast . BoolOp ( token = left . token , op = ast . Or ( token = left . token ) , values = [left] + [value [1] for value in right] ) if right else left;
         self._reset(mark)
         return None;
 
@@ -2246,20 +2241,20 @@ class GeneratedParser(Parser):
         if (
             (or_test := self.or_test())
         ):
-            return ( lambda or_test : or_test ) ( or_test );
+            return or_test;
         self._reset(mark)
         return None;
 
     @memoize
     def conditional_expression(self) -> Optional[Any]:
-        # conditional_expression: ready_to_if_expr (auto_generated_0__tmp_28)?
+        # conditional_expression: ready_to_if_expr [if_token ready_to_if_expr else_token expression]
         mark = self._mark()
         if (
             (left := self.ready_to_if_expr())
             and
-            (new_node := self.auto_generated_0__tmp_28(),)
+            (new_node := self._tmp_28(),)
         ):
-            return ( lambda left , new_node : ast . IfExp ( token = left . token , body = left , test = new_node [1] , orelse = new_node [3] ) if new_node else left ) ( left , new_node );
+            return ast . IfExp ( token = left . token , body = left , test = new_node [1] , orelse = new_node [3] ) if new_node else left;
         self._reset(mark)
         return None;
 
@@ -2276,12 +2271,12 @@ class GeneratedParser(Parser):
             and
             (body := self.expression())
         ):
-            return ( lambda token , args , body : ast . Lambda ( token = token , args = args , body = body ) ) ( token , args , body );
+            return ast . Lambda ( token = token , args = args , body = body , );
         self._reset(mark)
         if (
             (conditional_expression := self.conditional_expression())
         ):
-            return ( lambda conditional_expression : conditional_expression ) ( conditional_expression );
+            return conditional_expression;
         self._reset(mark)
         return None;
 
@@ -2292,46 +2287,46 @@ class GeneratedParser(Parser):
         if (
             (expression := self.expression())
         ):
-            return ( lambda expression : expression ) ( expression );
+            return expression;
         self._reset(mark)
         if (
             (self.star_token())
             and
             (value := self.ready_to_be_starred_expr())
         ):
-            return ( lambda value : ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) ) ) ( value );
+            return ast . Starred ( token = value . token , value = value , ctx = ast . Load ( token = value . token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def tupled_expression(self) -> Optional[Any]:
-        # tupled_expression: auto_generated_0__gather_29 (comma_token)?
+        # tupled_expression: comma_token.tupled_expression_item+ comma_token?
         mark = self._mark()
         if (
-            (vs := self.auto_generated_0__gather_29())
+            (vs := self._gather_29())
             and
             (tc := self.comma_token(),)
         ):
-            return ( lambda vs , tc : vs [0] if len ( vs ) == 1 and ( not tc ) else ast . Tuple ( token = vs [0] . token , elts = vs , ctx = ast . Load ( token = vs [0] . token ) ) ) ( vs , tc );
+            return vs [0] if len ( vs ) == 1 and not tc else ast . Tuple ( token = vs [0] . token , elts = vs , ctx = ast . Load ( token = vs [0] . token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def walrus_expression(self) -> Optional[Any]:
-        # walrus_expression: (auto_generated_0__tmp_31)? expression
+        # walrus_expression: [set_name walrus_token] expression
         mark = self._mark()
         if (
-            (new_node := self.auto_generated_0__tmp_31(),)
+            (new_node := self._tmp_31(),)
             and
             (value := self.expression())
         ):
-            return ( lambda new_node , value : ast . NamedExpr ( token = value . token , target = new_node [0] , value = value ) if new_node else value ) ( new_node , value );
+            return ast . NamedExpr ( token = value . token , target = new_node [0] , value = value ) if new_node else value;
         self._reset(mark)
         return None;
 
     @memoize
     def yield_expression(self) -> Optional[Any]:
-        # yield_expression: yield_token from_token expression | yield_token (tupled_expression)? | tupled_expression
+        # yield_expression: yield_token from_token expression | yield_token tupled_expression? | tupled_expression
         mark = self._mark()
         if (
             (token := self.yield_token())
@@ -2340,19 +2335,19 @@ class GeneratedParser(Parser):
             and
             (value := self.expression())
         ):
-            return ( lambda token , value : ast . YieldFrom ( token = token , value = value ) ) ( token , value );
+            return ast . YieldFrom ( token = token , value = value );
         self._reset(mark)
         if (
             (token := self.yield_token())
             and
             (value := self.tupled_expression(),)
         ):
-            return ( lambda token , value : ast . Yield ( token = token , value = value ) ) ( token , value );
+            return ast . Yield ( token = token , value = value );
         self._reset(mark)
         if (
             (tupled_expression := self.tupled_expression())
         ):
-            return ( lambda tupled_expression : tupled_expression ) ( tupled_expression );
+            return tupled_expression;
         self._reset(mark)
         return None;
 
@@ -2363,100 +2358,100 @@ class GeneratedParser(Parser):
         if (
             (yield_expression := self.yield_expression())
         ):
-            return ( lambda yield_expression : yield_expression ) ( yield_expression );
+            return yield_expression;
         self._reset(mark)
         if (
             (conditional_expression := self.conditional_expression())
         ):
-            return ( lambda conditional_expression : conditional_expression ) ( conditional_expression );
+            return conditional_expression;
         self._reset(mark)
         return None;
 
     @memoize
     def start_bracket(self) -> Optional[Any]:
-        # start_bracket: ''
+        # start_bracket: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _bracket_level . append ( None )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _bracket_level . append ( None )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_bracket(self) -> Optional[Any]:
-        # stop_bracket: ''
+        # stop_bracket: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _bracket_level . pop ( )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _bracket_level . pop ( )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_loop(self) -> Optional[Any]:
-        # start_loop: ''
+        # start_loop: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . append ( 1 )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 1 )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_loop(self) -> Optional[Any]:
-        # stop_loop: ''
+        # stop_loop: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . pop ( )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_func(self) -> Optional[Any]:
-        # start_func: ''
+        # start_func: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 1 )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 1 )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_func(self) -> Optional[Any]:
-        # stop_func: ''
+        # stop_func: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_coro(self) -> Optional[Any]:
-        # start_coro: ''
+        # start_coro: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 2 )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . append ( 0 ) , char_parser . to_char_parser ( self ) . _func_level . append ( 2 )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_coro(self) -> Optional[Any]:
-        # stop_coro: ''
+        # stop_coro: r''
         mark = self._mark()
         if (
-            (self.expect(''))
+            (self.expect(r''))
         ):
-            return ( lambda : [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )] ) ( );
+            return [char_parser . to_char_parser ( self ) . _loop_level . pop ( ) , char_parser . to_char_parser ( self ) . _func_level . pop ( )];
         self._reset(mark)
         return None;
 
@@ -2467,22 +2462,22 @@ class GeneratedParser(Parser):
         if (
             (a := self.spaces_for_indent())
         ):
-            return ( lambda a : [char_parser . to_char_parser ( self ) . _indent_levels . __setitem__ ( - 1 , + a ) , a] [1] if char_parser . to_char_parser ( self ) . _indent_levels [- 1] == None and a ( ) != char_parser . to_char_parser ( self ) . _indent_levels [- 2] and a ( ) . startswith ( char_parser . to_char_parser ( self ) . _indent_levels [- 2] ) else [None , a] [char_parser . to_char_parser ( self ) . _indent_levels [- 1] == + a] ) ( a );
+            return [char_parser . to_char_parser ( self ) . _indent_levels . __setitem__ ( - 1 , + a ) , a] [1] if char_parser . to_char_parser ( self ) . _indent_levels [- 1] == None and a ( ) != char_parser . to_char_parser ( self ) . _indent_levels [- 2] and a ( ) . startswith ( char_parser . to_char_parser ( self ) . _indent_levels [- 2] ) else [None , a] [char_parser . to_char_parser ( self ) . _indent_levels [- 1] == + a];
         self._reset(mark)
         return None;
 
     @memoize
     def semicolon_separated_statements(self) -> Optional[Any]:
-        # semicolon_separated_statements: auto_generated_0__gather_32 (semicolon_token)? new_line
+        # semicolon_separated_statements: (semicolon_token).simple_stmt+ semicolon_token? new_line
         mark = self._mark()
         if (
-            (a := self.auto_generated_0__gather_32())
+            (a := self._gather_32())
             and
             (self.semicolon_token(),)
             and
             (self.new_line())
         ):
-            return ( lambda a : char_parser . to_char_parser ( self ) . _make_true ( a ) ) ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( a );
         self._reset(mark)
         return None;
 
@@ -2493,52 +2488,52 @@ class GeneratedParser(Parser):
         if (
             (a := self.multiple_lines_statement())
         ):
-            return ( lambda a : char_parser . to_char_parser ( self ) . _make_true ( [a] ) ) ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( [a] );
         self._reset(mark)
         if (
             (self.indent())
             and
             (a := self.semicolon_separated_statements())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
     @memoize
     def line(self) -> Optional[Any]:
-        # line: '$' | spaces new_line | line_content
+        # line: r'$' | spaces new_line | line_content
         mark = self._mark()
         if (
-            (self.expect('$'))
+            (self.expect(r'$'))
         ):
-            return ( lambda : None ) ( );
+            return None;
         self._reset(mark)
         if (
             (self.spaces())
             and
             (self.new_line())
         ):
-            return ( lambda : char_parser . to_char_parser ( self ) . _make_true ( [] ) ) ( );
+            return char_parser . to_char_parser ( self ) . _make_true ( [] );
         self._reset(mark)
         if (
             (a := self.line_content())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
     @memoize
     def code_block(self) -> Optional[Any]:
-        # code_block: 'append_indent\x00' auto_generated_0__loop1_34 'pop_indent\x00'
+        # code_block: 'append_indent\0' line+ 'pop_indent\0'
         mark = self._mark()
         if (
-            (self.expect('append_indent\x00'))
+            (self.expect('append_indent\0'))
             and
-            (a := self.auto_generated_0__loop1_34())
+            (a := self._loop1_34())
             and
-            (self.expect('pop_indent\x00'))
+            (self.expect('pop_indent\0'))
         ):
-            return ( lambda a : char_parser . to_char_parser ( self ) . _make_true ( [d for s in a for d in + s] ) ) ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( [d for s in a for d in + s] );
         self._reset(mark)
         return None;
 
@@ -2549,14 +2544,14 @@ class GeneratedParser(Parser):
         if (
             (semicolon_separated_statements := self.semicolon_separated_statements())
         ):
-            return ( lambda semicolon_separated_statements : semicolon_separated_statements ) ( semicolon_separated_statements );
+            return semicolon_separated_statements;
         self._reset(mark)
         if (
             (self.new_line())
             and
             (a := self.code_block())
         ):
-            return ( lambda a : a if + a else None ) ( a );
+            return a if + a else None;
         self._reset(mark)
         return None;
 
@@ -2569,7 +2564,7 @@ class GeneratedParser(Parser):
             and
             (a := self.body())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
@@ -2584,7 +2579,7 @@ class GeneratedParser(Parser):
             and
             (self.stop_loop())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
@@ -2599,7 +2594,7 @@ class GeneratedParser(Parser):
             and
             (self.stop_func())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
@@ -2614,22 +2609,22 @@ class GeneratedParser(Parser):
             and
             (self.stop_coro())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
     @memoize
     def start(self) -> Optional[Any]:
-        # start: '^' (line)* '$'
+        # start: r'^' line* r'$'
         mark = self._mark()
         if (
-            (token := self.expect('^'))
+            (token := self.expect(r'^'))
             and
-            (a := self._loop0_11(),)
+            (a := self._loop0_35(),)
             and
-            (self.expect('$'))
+            (self.expect(r'$'))
         ):
-            return ( lambda token , a : ast . Module ( token = token , body = [d for s in a for d in + s] , type_ignores = [] ) ) ( token , a );
+            return ast . Module ( token = token , body = [d for s in a for d in + s] , type_ignores = [] );
         self._reset(mark)
         return None;
 
@@ -2640,58 +2635,58 @@ class GeneratedParser(Parser):
         if (
             (coro_def := self.coro_def())
         ):
-            return ( lambda coro_def : coro_def ) ( coro_def );
+            return coro_def;
         self._reset(mark)
         if (
             (func_def := self.func_def())
         ):
-            return ( lambda func_def : func_def ) ( func_def );
+            return func_def;
         self._reset(mark)
         if (
             (async_for_stmt := self.async_for_stmt())
         ):
-            return ( lambda async_for_stmt : async_for_stmt ) ( async_for_stmt );
+            return async_for_stmt;
         self._reset(mark)
         if (
             (for_stmt := self.for_stmt())
         ):
-            return ( lambda for_stmt : for_stmt ) ( for_stmt );
+            return for_stmt;
         self._reset(mark)
         if (
             (while_stmt := self.while_stmt())
         ):
-            return ( lambda while_stmt : while_stmt ) ( while_stmt );
+            return while_stmt;
         self._reset(mark)
         if (
             (if_stmt := self.if_stmt())
         ):
-            return ( lambda if_stmt : if_stmt ) ( if_stmt );
+            return if_stmt;
         self._reset(mark)
         if (
             (try_stmt := self.try_stmt())
         ):
-            return ( lambda try_stmt : try_stmt ) ( try_stmt );
+            return try_stmt;
         self._reset(mark)
         if (
             (with_stmt := self.with_stmt())
         ):
-            return ( lambda with_stmt : with_stmt ) ( with_stmt );
+            return with_stmt;
         self._reset(mark)
         if (
             (async_with_stmt := self.async_with_stmt())
         ):
-            return ( lambda async_with_stmt : async_with_stmt ) ( async_with_stmt );
+            return async_with_stmt;
         self._reset(mark)
         if (
             (class_def := self.class_def())
         ):
-            return ( lambda class_def : class_def ) ( class_def );
+            return class_def;
         self._reset(mark)
         return None;
 
     @memoize
     def if_stmt(self) -> Optional[Any]:
-        # if_stmt: indent if_token walrus_expression colon_and_body (auto_generated_0__tmp_107)* (auto_generated_0__tmp_37)?
+        # if_stmt: indent if_token walrus_expression colon_and_body ((indent elif_token walrus_expression colon_and_body))* [indent else_token colon_and_body]
         mark = self._mark()
         if (
             (indent := self.indent())
@@ -2702,17 +2697,17 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_body())
             and
-            (mebbe := self._loop0_12(),)
+            (mebbe := self._loop0_36(),)
             and
-            (orelse := self.auto_generated_0__tmp_37(),)
+            (orelse := self._tmp_37(),)
         ):
-            return ( lambda indent , token , test , body , mebbe , orelse : char_parser . to_char_parser ( self ) . _functools . reduce ( lambda a , s : [ast . If ( token = s [1] , test = s [2] , body = + s [3] , orelse = a )] , ( [[indent , token , test , body]] + ( mebbe if mebbe else [] ) ) [: : - 1] , + orelse [2] if orelse else [] ) [0] ) ( indent , token , test , body , mebbe , orelse );
+            return char_parser . to_char_parser ( self ) . _functools . reduce ( lambda a , s : [ast . If ( token = s [1] , test = s [2] , body = + s [3] , orelse = a )] , ( [[indent , token , test , body]] + ( mebbe if mebbe else [] ) ) [: : - 1] , + orelse [2] if orelse else [] ) [0];
         self._reset(mark)
         return None;
 
     @memoize
     def for_stmt(self) -> Optional[Any]:
-        # for_stmt: indent for_token set_multiple_targets in_token tupled_expression colon_and_loop_body (auto_generated_0__tmp_38)?
+        # for_stmt: indent for_token set_multiple_targets in_token tupled_expression colon_and_loop_body [indent else_token colon_and_body]
         mark = self._mark()
         if (
             (self.indent())
@@ -2727,15 +2722,15 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_loop_body())
             and
-            (orelse := self.auto_generated_0__tmp_38(),)
+            (orelse := self._tmp_38(),)
         ):
-            return ( lambda token , target , iter , body , orelse : ast . For ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] ) ) ( token , target , iter , body , orelse );
+            return ast . For ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] , );
         self._reset(mark)
         return None;
 
     @memoize
     def async_for_stmt(self) -> Optional[Any]:
-        # async_for_stmt: indent async_token for_token set_multiple_targets in_token expression colon_and_loop_body (auto_generated_0__tmp_39)?
+        # async_for_stmt: indent async_token for_token set_multiple_targets in_token expression colon_and_loop_body [indent else_token colon_and_body]
         mark = self._mark()
         if (
             (self.indent())
@@ -2752,15 +2747,15 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_loop_body())
             and
-            (orelse := self.auto_generated_0__tmp_39(),)
+            (orelse := self._tmp_39(),)
         ):
-            return ( lambda token , target , iter , body , orelse : ast . AsyncFor ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) ) ( token , target , iter , body , orelse );
+            return ast . AsyncFor ( token = token , target = target , iter = iter , body = + body , orelse = + orelse [2] if orelse else [] , ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def while_stmt(self) -> Optional[Any]:
-        # while_stmt: indent while_token walrus_expression colon_and_loop_body (auto_generated_0__tmp_40)?
+        # while_stmt: indent while_token walrus_expression colon_and_loop_body [indent else_token colon_and_body]
         mark = self._mark()
         if (
             (self.indent())
@@ -2771,28 +2766,28 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_loop_body())
             and
-            (orelse := self.auto_generated_0__tmp_40(),)
+            (orelse := self._tmp_40(),)
         ):
-            return ( lambda token , test , body , orelse : ast . While ( token = token , test = test , body = + body , orelse = + orelse [2] if orelse else [] ) ) ( token , test , body , orelse );
+            return ast . While ( token = token , test = test , body = + body , orelse = + orelse [2] if orelse else [] , );
         self._reset(mark)
         return None;
 
     @memoize
     def try_stmt(self) -> Optional[Any]:
-        # try_stmt: '' auto_generated_0__tmp_41
+        # try_stmt: '' (try_group | try_except | try_finally)
         mark = self._mark()
         if (
             (self.expect(''))
             and
-            (a := self.auto_generated_0__tmp_41())
+            (a := self._tmp_41())
         ):
-            return ( lambda a : ( ast . TryStar if a [3] and len ( a [3] [0] ) == 5 else ast . Try ) ( token = a [1] , body = + a [2] , handlers = [ast . ExceptHandler ( token = a [1] , type = handler [- 2] [0] if handler [- 2] else None , name = + handler [- 2] [1] [1] if handler [- 2] and handler [- 2] [1] else None , body = + handler [- 1] ) for handler in a [3]] , orelse = + a [4] [2] if a [4] else [] , finalbody = + a [5] [2] if a [5] else [] ) ) ( a );
+            return ( ast . TryStar if a [3] and len ( a [3] [0] ) == 5 else ast . Try ) ( token = a [1] , body = + a [2] , handlers = [ast . ExceptHandler ( token = a [1] , type = handler [- 2] [0] if handler [- 2] else None , name = + handler [- 2] [1] [1] if handler [- 2] and handler [- 2] [1] else None , body = + handler [- 1] ) for handler in a [3]] , orelse = + a [4] [2] if a [4] else [] , finalbody = + a [5] [2] if a [5] else [] , );
         self._reset(mark)
         return None;
 
     @memoize
     def try_except(self) -> Optional[Any]:
-        # try_except: indent try_token colon_and_body auto_generated_0__loop1_42 (auto_generated_0__tmp_43)? (auto_generated_0__tmp_44)?
+        # try_except: indent try_token colon_and_body except_colon+ [indent else_token colon_and_body] [indent finally_token colon_and_body]
         mark = self._mark()
         if (
             (indent := self.indent())
@@ -2801,19 +2796,19 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_body())
             and
-            (handlers := self.auto_generated_0__loop1_42())
+            (handlers := self._loop1_42())
             and
-            (orelse := self.auto_generated_0__tmp_43(),)
+            (orelse := self._tmp_43(),)
             and
-            (finalbody := self.auto_generated_0__tmp_44(),)
+            (finalbody := self._tmp_44(),)
         ):
-            return ( lambda indent , token , body , handlers , orelse , finalbody : [indent , token , body , handlers , orelse , finalbody] ) ( indent , token , body , handlers , orelse , finalbody );
+            return [indent, token, body, handlers, orelse, finalbody];
         self._reset(mark)
         return None;
 
     @memoize
     def try_group(self) -> Optional[Any]:
-        # try_group: indent try_token colon_and_body auto_generated_0__loop1_45 (auto_generated_0__tmp_46)? (auto_generated_0__tmp_47)?
+        # try_group: indent try_token colon_and_body except_star+ [indent else_token colon_and_body] [indent finally_token colon_and_body]
         mark = self._mark()
         if (
             (indent := self.indent())
@@ -2822,19 +2817,19 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_body())
             and
-            (handlers := self.auto_generated_0__loop1_45())
+            (handlers := self._loop1_45())
             and
-            (orelse := self.auto_generated_0__tmp_46(),)
+            (orelse := self._tmp_46(),)
             and
-            (finalbody := self.auto_generated_0__tmp_47(),)
+            (finalbody := self._tmp_47(),)
         ):
-            return ( lambda indent , token , body , handlers , orelse , finalbody : [indent , token , body , handlers , orelse , finalbody] ) ( indent , token , body , handlers , orelse , finalbody );
+            return [indent, token, body, handlers, orelse, finalbody];
         self._reset(mark)
         return None;
 
     @memoize
     def try_finally(self) -> Optional[Any]:
-        # try_finally: indent try_token colon_and_body (!(''))* (!(''))* auto_generated_0__tmp_50
+        # try_finally: indent try_token colon_and_body (!'')* (!'')* (indent finally_token colon_and_body)
         mark = self._mark()
         if (
             (indent := self.indent())
@@ -2843,36 +2838,36 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_body())
             and
-            (handlers := self._loop0_13(),)
+            (handlers := self._loop0_48(),)
             and
-            (orelse := self._loop0_14(),)
+            (orelse := self._loop0_49(),)
             and
-            (finalbody := self.auto_generated_0__tmp_50())
+            (finalbody := self._tmp_50())
         ):
-            return ( lambda indent , token , body , handlers , orelse , finalbody : [indent , token , body , handlers , orelse , finalbody] ) ( indent , token , body , handlers , orelse , finalbody );
+            return [indent, token, body, handlers, orelse, finalbody];
         self._reset(mark)
         return None;
 
     @memoize
     def except_colon(self) -> Optional[Any]:
-        # except_colon: indent except_token (auto_generated_0__tmp_51)? colon_and_body
+        # except_colon: indent except_token [expression [as_token identifier]] colon_and_body
         mark = self._mark()
         if (
             (indent := self.indent())
             and
             (q := self.except_token())
             and
-            (w := self.auto_generated_0__tmp_51(),)
+            (w := self._tmp_51(),)
             and
             (e := self.colon_and_body())
         ):
-            return ( lambda indent , q , w , e : [indent , q , w , e] ) ( indent , q , w , e );
+            return [indent, q, w, e];
         self._reset(mark)
         return None;
 
     @memoize
     def except_star(self) -> Optional[Any]:
-        # except_star: indent except_token star_token (auto_generated_0__tmp_52)? colon_and_body
+        # except_star: indent except_token star_token [expression [as_token identifier]] colon_and_body
         mark = self._mark()
         if (
             (indent := self.indent())
@@ -2881,24 +2876,24 @@ class GeneratedParser(Parser):
             and
             (star_token := self.star_token())
             and
-            (opt := self.auto_generated_0__tmp_52(),)
+            (opt := self._tmp_52(),)
             and
             (colon_and_body := self.colon_and_body())
         ):
-            return ( lambda indent , except_token , star_token , opt , colon_and_body : [indent , except_token , star_token , opt , colon_and_body] ) ( indent , except_token , star_token , opt , colon_and_body );
+            return [indent, except_token, star_token, opt, colon_and_body];
         self._reset(mark)
         return None;
 
     @memoize
     def with_stmt_impl(self) -> Optional[Any]:
-        # with_stmt_impl: with_token left_paren_token auto_generated_0__gather_53 (comma_token)? right_paren_token colon_and_body | with_token auto_generated_0__gather_55 colon_and_body
+        # with_stmt_impl: with_token left_paren_token comma_token.(expression [as_token set_array_target])+ comma_token? right_paren_token colon_and_body | with_token comma_token.(expression [as_token set_array_target])+ colon_and_body
         mark = self._mark()
         if (
             (token := self.with_token())
             and
             (self.left_paren_token())
             and
-            (items := self.auto_generated_0__gather_53())
+            (items := self._gather_53())
             and
             (self.comma_token(),)
             and
@@ -2906,16 +2901,16 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_body())
         ):
-            return ( lambda token , items , body : [token , items , body] ) ( token , items , body );
+            return [token , items , body];
         self._reset(mark)
         if (
             (token := self.with_token())
             and
-            (items := self.auto_generated_0__gather_55())
+            (items := self._gather_55())
             and
             (body := self.colon_and_body())
         ):
-            return ( lambda token , items , body : [token , items , body] ) ( token , items , body );
+            return [token, items, body];
         self._reset(mark)
         return None;
 
@@ -2928,7 +2923,7 @@ class GeneratedParser(Parser):
             and
             (a := self.with_stmt_impl())
         ):
-            return ( lambda a : ast . With ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] ) ) ( a );
+            return ast . With ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] , );
         self._reset(mark)
         return None;
 
@@ -2943,13 +2938,13 @@ class GeneratedParser(Parser):
             and
             (a := self.with_stmt_impl())
         ):
-            return ( lambda a : ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( ) ) ( a );
+            return ast . AsyncWith ( token = a [0] , items = [ast . withitem ( token = a [0] , context_expr = item [0] , optional_vars = item [1] [1] if item [1] else None ) for item in a [1]] , body = + a [2] , ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 2 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def class_def(self) -> Optional[Any]:
-        # class_def: decorator_list indent class_token identifier (type_params)? (auto_generated_0__tmp_57)? colon_and_body
+        # class_def: decorator_list indent class_token identifier type_params? [left_paren_token call_args right_paren_token] colon_and_body
         mark = self._mark()
         if (
             (decorator_list := self.decorator_list())
@@ -2962,11 +2957,11 @@ class GeneratedParser(Parser):
             and
             (type_params := self.type_params(),)
             and
-            (args := self.auto_generated_0__tmp_57(),)
+            (args := self._tmp_57(),)
             and
             (body := self.colon_and_body())
         ):
-            return ( lambda decorator_list , token , name , type_params , args , body : ast . ClassDef ( token = token , name = + name , bases = args [1] ['args'] if args else [] , keywords = args [1] ['keywords'] if args else [] , body = + body , decorator_list = + decorator_list , type_params = + type_params if type_params else [] ) ) ( decorator_list , token , name , type_params , args , body );
+            return ast . ClassDef ( token = token , name = + name , bases = args [1] ['args'] if args else [] , keywords = args [1] ['keywords'] if args else [] , body = + body , decorator_list = + decorator_list , type_params = + type_params if type_params else [] );
         self._reset(mark)
         return None;
 
@@ -2981,7 +2976,7 @@ class GeneratedParser(Parser):
             and
             (annotation := self.expression())
         ):
-            return ( lambda arg , annotation : ast . arg ( token = arg , arg = + arg , annotation = annotation ) if char_parser . to_char_parser ( self ) . _args_level [- 1] else None ) ( arg , annotation );
+            return ast . arg ( token = arg , arg = + arg , annotation = annotation ) if char_parser . to_char_parser ( self ) . _args_level [- 1] else None;
         self._reset(mark)
         return None;
 
@@ -2992,7 +2987,7 @@ class GeneratedParser(Parser):
         if (
             (arg := self.identifier())
         ):
-            return ( lambda arg : ast . arg ( token = arg , arg = + arg , annotation = None ) ) ( arg );
+            return ast . arg ( token = arg , arg = + arg , annotation = None );
         self._reset(mark)
         return None;
 
@@ -3003,31 +2998,31 @@ class GeneratedParser(Parser):
         if (
             (parameter_with_colon := self.parameter_with_colon())
         ):
-            return ( lambda parameter_with_colon : parameter_with_colon ) ( parameter_with_colon );
+            return parameter_with_colon;
         self._reset(mark)
         if (
             (parameter_without_colon := self.parameter_without_colon())
         ):
-            return ( lambda parameter_without_colon : parameter_without_colon ) ( parameter_without_colon );
+            return parameter_without_colon;
         self._reset(mark)
         return None;
 
     @memoize
     def defparameter(self) -> Optional[Any]:
-        # defparameter: parameter (auto_generated_0__tmp_58)?
+        # defparameter: parameter [assign_token expression]
         mark = self._mark()
         if (
             (arg := self.parameter())
             and
-            (default := self.auto_generated_0__tmp_58(),)
+            (default := self._tmp_58(),)
         ):
-            return ( lambda arg , default : [arg , default [1] if default else None] ) ( arg , default );
+            return [arg , default [1] if default else None];
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_starstar(self) -> Optional[Any]:
-        # parameter_starstar: starstar_token parameter (comma_token)?
+        # parameter_starstar: starstar_token parameter comma_token?
         mark = self._mark()
         if (
             (self.starstar_token())
@@ -3036,69 +3031,69 @@ class GeneratedParser(Parser):
             and
             (self.comma_token(),)
         ):
-            return ( lambda kwarg : dict ( kwarg = kwarg ) ) ( kwarg );
+            return dict ( kwarg = kwarg );
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_list_starargs(self) -> Optional[Any]:
-        # parameter_list_starargs: parameter_starstar | star_token (parameter)? (auto_generated_0__tmp_112)* (auto_generated_0__tmp_60)?
+        # parameter_list_starargs: parameter_starstar | star_token parameter? ((comma_token defparameter))* [comma_token parameter_starstar?]
         mark = self._mark()
         if (
             (others := self.parameter_starstar())
         ):
-            return ( lambda others : dict ( vararg = None , kwonlyargs = [] , kw_defaults = [] ) | others ) ( others );
+            return dict ( vararg = None , kwonlyargs = [] , kw_defaults = [] ) | others;
         self._reset(mark)
         if (
             (self.star_token())
             and
             (vararg := self.parameter(),)
             and
-            (kwonlyargs := self._loop0_15(),)
+            (kwonlyargs := self._loop0_59(),)
             and
-            (others := self.auto_generated_0__tmp_60(),)
+            (others := self._tmp_60(),)
         ):
-            return ( lambda vararg , kwonlyargs , others : ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( vararg = vararg , kwonlyargs = [q [1] [0] for q in kwonlyargs] if kwonlyargs else [] , kw_defaults = [q [1] [1] for q in kwonlyargs] if kwonlyargs else [] ) ) ( vararg , kwonlyargs , others );
+            return ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( vararg = vararg , kwonlyargs = [q [1] [0] for q in kwonlyargs] if kwonlyargs else [] , kw_defaults = [q [1] [1] for q in kwonlyargs] if kwonlyargs else [] , );
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_list_no_posonly(self) -> Optional[Any]:
-        # parameter_list_no_posonly: auto_generated_0__gather_61 (auto_generated_0__tmp_63)? | parameter_list_starargs
+        # parameter_list_no_posonly: comma_token.defparameter+ [comma_token parameter_list_starargs?] | parameter_list_starargs
         mark = self._mark()
         if (
-            (args := self.auto_generated_0__gather_61())
+            (args := self._gather_61())
             and
-            (others := self.auto_generated_0__tmp_63(),)
+            (others := self._tmp_63(),)
         ):
-            return ( lambda args , others : ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( args = [arg [0] for arg in args] , defaults = [arg [1] for arg in args] ) ) ( args , others );
+            return ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( args = [arg [0] for arg in args] , defaults = [arg [1] for arg in args] , );
         self._reset(mark)
         if (
             (others := self.parameter_list_starargs())
         ):
-            return ( lambda others : dict ( args = [] , defaults = [] ) | others ) ( others );
+            return dict ( args = [] , defaults = [] ) | others;
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_list(self) -> Optional[Any]:
-        # parameter_list: auto_generated_0__gather_64 comma_token slash_token (auto_generated_0__tmp_66)? | parameter_list_no_posonly
+        # parameter_list: comma_token.defparameter+ comma_token slash_token [comma_token parameter_list_no_posonly?] | parameter_list_no_posonly
         mark = self._mark()
         if (
-            (posonlyargs := self.auto_generated_0__gather_64())
+            (posonlyargs := self._gather_64())
             and
             (self.comma_token())
             and
             (self.slash_token())
             and
-            (others := self.auto_generated_0__tmp_66(),)
+            (others := self._tmp_66(),)
         ):
-            return ( lambda posonlyargs , others : ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( posonlyargs = [arg [0] for arg in posonlyargs] , defaults = [arg [1] for arg in posonlyargs] + ( others [1] ['defaults'] if others and others [1] else [] ) ) ) ( posonlyargs , others );
+            return ( others [1] if others and others [1] else dict ( posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) | dict ( posonlyargs = [arg [0] for arg in posonlyargs] , defaults = [arg [1] for arg in posonlyargs] + ( others [1] ['defaults'] if others and others [1] else [] ) , );
         self._reset(mark)
         if (
             (others := self.parameter_list_no_posonly())
         ):
-            return ( lambda others : dict ( posonlyargs = [] ) | others ) ( others );
+            return dict ( posonlyargs = [] ) | others;
         self._reset(mark)
         return None;
 
@@ -3109,57 +3104,57 @@ class GeneratedParser(Parser):
         if (
             (args := self.parameter_list())
         ):
-            return ( lambda args : args | dict ( defaults = [arg for arg in args ['defaults'] if arg] ) if not any ( [w is None and e is not None for ( q , w ) in enumerate ( args ['defaults'] ) for e in args ['defaults'] [: q]] ) else char_parser . to_char_parser ( self ) . _error ( ) ) ( args );
+            return args | dict ( defaults = [arg for arg in args ['defaults'] if arg] ) if not any ( [w is None and e is not None for q , w in enumerate ( args ['defaults'] ) for e in args ['defaults'] [: q]] ) else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def start_func_args(self) -> Optional[Any]:
-        # start_func_args: ''
+        # start_func_args: r''
         mark = self._mark()
         if (
-            (token := self.expect(''))
+            (token := self.expect(r''))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _args_level . append ( 1 )] ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _args_level . append ( 1 )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_func_args(self) -> Optional[Any]:
-        # stop_func_args: ''
+        # stop_func_args: r''
         mark = self._mark()
         if (
-            (token := self.expect(''))
+            (token := self.expect(r''))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )] ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )];
         self._reset(mark)
         return None;
 
     @memoize
     def start_lmbd_args(self) -> Optional[Any]:
-        # start_lmbd_args: ''
+        # start_lmbd_args: r''
         mark = self._mark()
         if (
-            (token := self.expect(''))
+            (token := self.expect(r''))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _args_level . append ( 0 )] ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _args_level . append ( 0 )];
         self._reset(mark)
         return None;
 
     @memoize
     def stop_lmbd_args(self) -> Optional[Any]:
-        # stop_lmbd_args: ''
+        # stop_lmbd_args: r''
         mark = self._mark()
         if (
-            (token := self.expect(''))
+            (token := self.expect(r''))
         ):
-            return ( lambda token : [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )] ) ( token );
+            return [token , char_parser . to_char_parser ( self ) . _args_level . pop ( )];
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_list_func(self) -> Optional[Any]:
-        # parameter_list_func: start_func_args (parameter_list_preprocessed)? stop_func_args
+        # parameter_list_func: start_func_args parameter_list_preprocessed? stop_func_args
         mark = self._mark()
         if (
             (token := self.start_func_args())
@@ -3168,13 +3163,13 @@ class GeneratedParser(Parser):
             and
             (self.stop_func_args())
         ):
-            return ( lambda token , args : ast . arguments ( token = token [0] , ** args ) if args else ast . arguments ( token = token [0] , posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) ( token , args );
+            return ast . arguments ( token = token [0] , ** args ) if args else ast . arguments ( token = token [0] , posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] );
         self._reset(mark)
         return None;
 
     @memoize
     def parameter_list_lmbd(self) -> Optional[Any]:
-        # parameter_list_lmbd: start_lmbd_args (parameter_list_preprocessed)? stop_lmbd_args
+        # parameter_list_lmbd: start_lmbd_args parameter_list_preprocessed? stop_lmbd_args
         mark = self._mark()
         if (
             (token := self.start_lmbd_args())
@@ -3183,7 +3178,7 @@ class GeneratedParser(Parser):
             and
             (self.stop_lmbd_args())
         ):
-            return ( lambda token , args : ast . arguments ( token = token [0] , ** args ) if args else ast . arguments ( token = token [0] , posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] ) ) ( token , args );
+            return ast . arguments ( token = token [0] , ** args ) if args else ast . arguments ( token = token [0] , posonlyargs = [] , args = [] , kwonlyargs = [] , kw_defaults = [] , defaults = [] );
         self._reset(mark)
         return None;
 
@@ -3200,7 +3195,7 @@ class GeneratedParser(Parser):
             and
             (self.new_line())
         ):
-            return ( lambda a : a ) ( a );
+            return a;
         self._reset(mark)
         return None;
 
@@ -3211,32 +3206,32 @@ class GeneratedParser(Parser):
         if (
             (decorator := self.decorator())
         ):
-            return ( lambda decorator : decorator ) ( decorator );
+            return decorator;
         self._reset(mark)
         if (
             (self.spaces())
             and
             (self.new_line())
         ):
-            return ( lambda : ... ) ( );
+            return ...;
         self._reset(mark)
         return None;
 
     @memoize
     def decorator_list(self) -> Optional[Any]:
-        # decorator_list: (decorator_or_spaces)*
+        # decorator_list: decorator_or_spaces*
         # nullable=True
         mark = self._mark()
         if (
-            (a := self._loop0_16(),)
+            (a := self._loop0_67(),)
         ):
-            return ( lambda a : char_parser . to_char_parser ( self ) . _make_true ( [q for q in a if q is not ...] ) ) ( a );
+            return char_parser . to_char_parser ( self ) . _make_true ( [q for q in a if q is not ...] );
         self._reset(mark)
         return None;
 
     @memoize
     def func_signature(self) -> Optional[Any]:
-        # func_signature: def_token identifier (type_params)? left_paren_token (parameter_list_func)? right_paren_token (auto_generated_0__tmp_68)?
+        # func_signature: def_token identifier type_params? left_paren_token parameter_list_func? right_paren_token [returns_token expression]
         mark = self._mark()
         if (
             (def_token := self.def_token())
@@ -3251,9 +3246,9 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
             and
-            (returns := self.auto_generated_0__tmp_68(),)
+            (returns := self._tmp_68(),)
         ):
-            return ( lambda def_token , name , type_params , args , returns : lambda decorator_list , a_token , body : ( ast . AsyncFunctionDef if a_token else ast . FunctionDef ) ( token = a_token if a_token else def_token , decorator_list = + decorator_list , name = + name , type_params = + type_params if type_params else [] , args = args , returns = returns [1] if returns else None , body = + body ) ) ( def_token , name , type_params , args , returns );
+            return lambda decorator_list , a_token , body : ( ast . AsyncFunctionDef if a_token else ast . FunctionDef ) ( token = a_token if a_token else def_token , decorator_list = + decorator_list , name = + name , type_params = + type_params if type_params else [] , args = args , returns = returns [1] if returns else None , body = + body , );
         self._reset(mark)
         return None;
 
@@ -3270,7 +3265,7 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_func_body())
         ):
-            return ( lambda decorator_list , data , body : data ( decorator_list , None , body ) ) ( decorator_list , data , body );
+            return data ( decorator_list , None , body );
         self._reset(mark)
         return None;
 
@@ -3289,7 +3284,7 @@ class GeneratedParser(Parser):
             and
             (body := self.colon_and_coro_body())
         ):
-            return ( lambda decorator_list , a_token , data , body : data ( decorator_list , a_token , body ) ) ( decorator_list , a_token , data , body );
+            return data ( decorator_list , a_token , body );
         self._reset(mark)
         return None;
 
@@ -3304,22 +3299,22 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda target : [target [0] , 0] ) ( target );
+            return [target [0] , 0];
         self._reset(mark)
         if (
             (target := self.set_attributeref())
         ):
-            return ( lambda target : [target , 0] ) ( target );
+            return [target , 0];
         self._reset(mark)
         if (
             (target := self.set_subscription())
         ):
-            return ( lambda target : [target , 0] ) ( target );
+            return [target , 0];
         self._reset(mark)
         if (
             (target := self.set_name())
         ):
-            return ( lambda target : [target , 1] ) ( target );
+            return [target , 1];
         self._reset(mark)
         return None;
 
@@ -3334,33 +3329,33 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda target : [target [0] , 0] ) ( target );
+            return [target [0] , 0];
         self._reset(mark)
         if (
             (target := self.del_attributeref())
         ):
-            return ( lambda target : [target , 0] ) ( target );
+            return [target , 0];
         self._reset(mark)
         if (
             (target := self.del_subscription())
         ):
-            return ( lambda target : [target , 0] ) ( target );
+            return [target , 0];
         self._reset(mark)
         if (
             (target := self.del_name())
         ):
-            return ( lambda target : [target , 1] ) ( target );
+            return [target , 1];
         self._reset(mark)
         return None;
 
     @memoize
     def set_array_target(self) -> Optional[Any]:
-        # set_array_target: set_single_target | left_paren_token (set_multiple_targets)? right_paren_token | left_bracket_token (set_array_targets)? right_bracket_token | star_token set_array_target
+        # set_array_target: set_single_target | left_paren_token set_multiple_targets? right_paren_token | left_bracket_token set_array_targets? right_bracket_token | star_token set_array_target
         mark = self._mark()
         if (
             (target := self.set_single_target())
         ):
-            return ( lambda target : target [0] ) ( target );
+            return target [0];
         self._reset(mark)
         if (
             (token := self.left_paren_token())
@@ -3369,7 +3364,7 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda token , targets : targets if targets else ast . Tuple ( token = token , elts = [] , ctx = ast . Store ( token = token ) ) ) ( token , targets );
+            return targets if targets else ast . Tuple ( token = token , elts = [] , ctx = ast . Store ( token = token ) );
         self._reset(mark)
         if (
             (token := self.left_bracket_token())
@@ -3378,25 +3373,25 @@ class GeneratedParser(Parser):
             and
             (self.right_bracket_token())
         ):
-            return ( lambda token , targets : ast . List ( token = token , elts = targets [0] if targets else [] , ctx = ast . Store ( token = token ) ) ) ( token , targets );
+            return ast . List ( token = token , elts = targets [0] if targets else [] , ctx = ast . Store ( token = token ) );
         self._reset(mark)
         if (
             (token := self.star_token())
             and
             (value := self.set_array_target())
         ):
-            return ( lambda token , value : None if isinstance ( value , ast . Starred ) else ast . Starred ( token = token , value = value , ctx = ast . Store ( token = token ) ) ) ( token , value );
+            return None if isinstance ( value , ast . Starred ) else ast . Starred ( token = token , value = value , ctx = ast . Store ( token = token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def del_array_target(self) -> Optional[Any]:
-        # del_array_target: del_single_target | left_paren_token (del_multiple_targets)? right_paren_token | left_bracket_token (del_array_targets)? right_bracket_token | star_token del_array_target
+        # del_array_target: del_single_target | left_paren_token del_multiple_targets? right_paren_token | left_bracket_token del_array_targets? right_bracket_token | star_token del_array_target
         mark = self._mark()
         if (
             (target := self.del_single_target())
         ):
-            return ( lambda target : target [0] ) ( target );
+            return target [0];
         self._reset(mark)
         if (
             (token := self.left_paren_token())
@@ -3405,7 +3400,7 @@ class GeneratedParser(Parser):
             and
             (self.right_paren_token())
         ):
-            return ( lambda token , targets : targets if targets else ast . Tuple ( token = token , elts = [] , ctx = ast . Del ( token = token ) ) ) ( token , targets );
+            return targets if targets else ast . Tuple ( token = token , elts = [] , ctx = ast . Del ( token = token ) );
         self._reset(mark)
         if (
             (token := self.left_bracket_token())
@@ -3414,40 +3409,40 @@ class GeneratedParser(Parser):
             and
             (self.right_bracket_token())
         ):
-            return ( lambda token , targets : ast . List ( token = token , elts = targets [0] if targets else [] , ctx = ast . Del ( token = token ) ) ) ( token , targets );
+            return ast . List ( token = token , elts = targets [0] if targets else [] , ctx = ast . Del ( token = token ) );
         self._reset(mark)
         if (
             (token := self.star_token())
             and
             (value := self.del_array_target())
         ):
-            return ( lambda token , value : None if isinstance ( value , ast . Starred ) else ast . Starred ( token = token , value = value , ctx = ast . Del ( token = token ) ) ) ( token , value );
+            return None if isinstance ( value , ast . Starred ) else ast . Starred ( token = token , value = value , ctx = ast . Del ( token = token ) );
         self._reset(mark)
         return None;
 
     @memoize
     def set_array_targets(self) -> Optional[Any]:
-        # set_array_targets: auto_generated_0__gather_69 (comma_token)?
+        # set_array_targets: comma_token.set_array_target+ comma_token?
         mark = self._mark()
         if (
-            (auto_generated_0__gather_69 := self.auto_generated_0__gather_69())
+            (_gather_69 := self._gather_69())
             and
             (opt := self.comma_token(),)
         ):
-            return ( lambda _gather_69 , opt : [_gather_69 , opt] ) ( auto_generated_0__gather_69 , opt );
+            return [_gather_69, opt];
         self._reset(mark)
         return None;
 
     @memoize
     def del_array_targets(self) -> Optional[Any]:
-        # del_array_targets: auto_generated_0__gather_71 (comma_token)?
+        # del_array_targets: comma_token.del_array_target+ comma_token?
         mark = self._mark()
         if (
-            (auto_generated_0__gather_71 := self.auto_generated_0__gather_71())
+            (_gather_71 := self._gather_71())
             and
             (opt := self.comma_token(),)
         ):
-            return ( lambda _gather_71 , opt : [_gather_71 , opt] ) ( auto_generated_0__gather_71 , opt );
+            return [_gather_71, opt];
         self._reset(mark)
         return None;
 
@@ -3458,7 +3453,7 @@ class GeneratedParser(Parser):
         if (
             (targets := self.set_array_targets())
         ):
-            return ( lambda targets : ast . Tuple ( token = targets [0] [0] . token , elts = targets [0] , ctx = ast . Store ( token = targets [0] [0] . token ) ) if len ( targets [0] ) != 1 or targets [1] else targets [0] [0] ) ( targets );
+            return ast . Tuple ( token = targets [0] [0] . token , elts = targets [0] , ctx = ast . Store ( token = targets [0] [0] . token ) ) if len ( targets [0] ) != 1 or targets [1] else targets [0] [0];
         self._reset(mark)
         return None;
 
@@ -3469,7 +3464,7 @@ class GeneratedParser(Parser):
         if (
             (targets := self.del_array_targets())
         ):
-            return ( lambda targets : ast . Tuple ( token = targets [0] [0] . token , elts = targets [0] , ctx = ast . Del ( token = targets [0] [0] . token ) ) if len ( targets [0] ) != 1 or targets [1] else targets [0] [0] ) ( targets );
+            return ast . Tuple ( token = targets [0] [0] . token , elts = targets [0] , ctx = ast . Del ( token = targets [0] [0] . token ) ) if len ( targets [0] ) != 1 or targets [1] else targets [0] [0];
         self._reset(mark)
         return None;
 
@@ -3480,77 +3475,77 @@ class GeneratedParser(Parser):
         if (
             (assert_stmt := self.assert_stmt())
         ):
-            return ( lambda assert_stmt : assert_stmt ) ( assert_stmt );
+            return assert_stmt;
         self._reset(mark)
         if (
             (pass_stmt := self.pass_stmt())
         ):
-            return ( lambda pass_stmt : pass_stmt ) ( pass_stmt );
+            return pass_stmt;
         self._reset(mark)
         if (
             (del_stmt := self.del_stmt())
         ):
-            return ( lambda del_stmt : del_stmt ) ( del_stmt );
+            return del_stmt;
         self._reset(mark)
         if (
             (return_stmt := self.return_stmt())
         ):
-            return ( lambda return_stmt : return_stmt ) ( return_stmt );
+            return return_stmt;
         self._reset(mark)
         if (
             (raise_stmt := self.raise_stmt())
         ):
-            return ( lambda raise_stmt : raise_stmt ) ( raise_stmt );
+            return raise_stmt;
         self._reset(mark)
         if (
             (break_stmt := self.break_stmt())
         ):
-            return ( lambda break_stmt : break_stmt ) ( break_stmt );
+            return break_stmt;
         self._reset(mark)
         if (
             (continue_stmt := self.continue_stmt())
         ):
-            return ( lambda continue_stmt : continue_stmt ) ( continue_stmt );
+            return continue_stmt;
         self._reset(mark)
         if (
             (import_stmt := self.import_stmt())
         ):
-            return ( lambda import_stmt : import_stmt ) ( import_stmt );
+            return import_stmt;
         self._reset(mark)
         if (
             (global_stmt := self.global_stmt())
         ):
-            return ( lambda global_stmt : global_stmt ) ( global_stmt );
+            return global_stmt;
         self._reset(mark)
         if (
             (nonlocal_stmt := self.nonlocal_stmt())
         ):
-            return ( lambda nonlocal_stmt : nonlocal_stmt ) ( nonlocal_stmt );
+            return nonlocal_stmt;
         self._reset(mark)
         if (
             (type_stmt := self.type_stmt())
         ):
-            return ( lambda type_stmt : type_stmt ) ( type_stmt );
+            return type_stmt;
         self._reset(mark)
         if (
             (augmented_assignment_stmt := self.augmented_assignment_stmt())
         ):
-            return ( lambda augmented_assignment_stmt : augmented_assignment_stmt ) ( augmented_assignment_stmt );
+            return augmented_assignment_stmt;
         self._reset(mark)
         if (
             (annotated_assignment_stmt := self.annotated_assignment_stmt())
         ):
-            return ( lambda annotated_assignment_stmt : annotated_assignment_stmt ) ( annotated_assignment_stmt );
+            return annotated_assignment_stmt;
         self._reset(mark)
         if (
             (assignment_stmt := self.assignment_stmt())
         ):
-            return ( lambda assignment_stmt : assignment_stmt ) ( assignment_stmt );
+            return assignment_stmt;
         self._reset(mark)
         if (
             (expression_stmt := self.expression_stmt())
         ):
-            return ( lambda expression_stmt : expression_stmt ) ( expression_stmt );
+            return expression_stmt;
         self._reset(mark)
         return None;
 
@@ -3561,20 +3556,20 @@ class GeneratedParser(Parser):
         if (
             (a := self.yield_expression())
         ):
-            return ( lambda a : ast . Expr ( token = a . token , value = a ) ) ( a );
+            return ast . Expr ( token = a . token , value = a );
         self._reset(mark)
         return None;
 
     @memoize
     def assignment_stmt(self) -> Optional[Any]:
-        # assignment_stmt: auto_generated_0__loop1_73 yield_expression
+        # assignment_stmt: ((set_multiple_targets assign_token))+ yield_expression
         mark = self._mark()
         if (
-            (targets := self.auto_generated_0__loop1_73())
+            (targets := self._loop1_73())
             and
             (value := self.yield_expression())
         ):
-            return ( lambda targets , value : ast . Assign ( token = value . token , targets = [target [0] for target in targets] , value = value ) ) ( targets , value );
+            return ast . Assign ( token = value . token , targets = [target [0] for target in targets] , value = value );
         self._reset(mark)
         return None;
 
@@ -3589,13 +3584,13 @@ class GeneratedParser(Parser):
             and
             (value := self.yield_expression())
         ):
-            return ( lambda target , op , value : ast . AugAssign ( token = op , target = target [0] , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [op ( ) [: - 1]] ( token = op ) , value = value ) ) ( target , op , value );
+            return ast . AugAssign ( token = op , target = target [0] , op = char_parser . to_char_parser ( self ) . _bin_op_to_ast [op ( ) [: - 1]] ( token = op ) , value = value );
         self._reset(mark)
         return None;
 
     @memoize
     def annotated_assignment_stmt(self) -> Optional[Any]:
-        # annotated_assignment_stmt: set_single_target colon_token expression (auto_generated_0__tmp_74)?
+        # annotated_assignment_stmt: set_single_target colon_token expression [assign_token yield_expression]
         mark = self._mark()
         if (
             (target := self.set_single_target())
@@ -3604,24 +3599,24 @@ class GeneratedParser(Parser):
             and
             (annotation := self.expression())
             and
-            (value := self.auto_generated_0__tmp_74(),)
+            (value := self._tmp_74(),)
         ):
-            return ( lambda target , token , annotation , value : ast . AnnAssign ( token = token , target = target [0] , annotation = annotation , value = value [1] if value else None , simple = target [1] ) ) ( target , token , annotation , value );
+            return ast . AnnAssign ( token = token , target = target [0] , annotation = annotation , value = value [1] if value else None , simple = target [1] );
         self._reset(mark)
         return None;
 
     @memoize
     def assert_stmt(self) -> Optional[Any]:
-        # assert_stmt: assert_token expression (auto_generated_0__tmp_75)?
+        # assert_stmt: assert_token expression [comma_token expression]
         mark = self._mark()
         if (
             (token := self.assert_token())
             and
             (test := self.expression())
             and
-            (msg := self.auto_generated_0__tmp_75(),)
+            (msg := self._tmp_75(),)
         ):
-            return ( lambda token , test , msg : ast . Assert ( token = token , test = test , msg = msg [1] if msg else None ) ) ( token , test , msg );
+            return ast . Assert ( token = token , test = test , msg = msg [1] if msg else None );
         self._reset(mark)
         return None;
 
@@ -3632,7 +3627,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.pass_token())
         ):
-            return ( lambda token : ast . Pass ( token = token ) ) ( token );
+            return ast . Pass ( token = token );
         self._reset(mark)
         return None;
 
@@ -3645,33 +3640,33 @@ class GeneratedParser(Parser):
             and
             (targets := self.del_array_targets())
         ):
-            return ( lambda token , targets : ast . Delete ( token = token , targets = targets [0] ) ) ( token , targets );
+            return ast . Delete ( token = token , targets = targets [0] );
         self._reset(mark)
         return None;
 
     @memoize
     def return_stmt(self) -> Optional[Any]:
-        # return_stmt: return_token (tupled_expression)?
+        # return_stmt: return_token tupled_expression?
         mark = self._mark()
         if (
             (token := self.return_token())
             and
             (value := self.tupled_expression(),)
         ):
-            return ( lambda token , value : ast . Return ( token = token , value = value ) ) ( token , value );
+            return ast . Return ( token = token , value = value );
         self._reset(mark)
         return None;
 
     @memoize
     def raise_stmt(self) -> Optional[Any]:
-        # raise_stmt: raise_token (auto_generated_0__tmp_76)?
+        # raise_stmt: raise_token [expression [from_token expression]]
         mark = self._mark()
         if (
             (token := self.raise_token())
             and
-            (exc := self.auto_generated_0__tmp_76(),)
+            (exc := self._tmp_76(),)
         ):
-            return ( lambda token , exc : ast . Raise ( token = token , exc = exc [0] if exc else None , cause = exc [1] [1] if exc and exc [1] else None ) ) ( token , exc );
+            return ast . Raise ( token = token , exc = exc [0] if exc else None , cause = exc [1] [1] if exc and exc [1] else None );
         self._reset(mark)
         return None;
 
@@ -3682,7 +3677,7 @@ class GeneratedParser(Parser):
         if (
             (token := self.break_token())
         ):
-            return ( lambda token : ast . Break ( token = token ) ) ( token );
+            return ast . Break ( token = token );
         self._reset(mark)
         return None;
 
@@ -3693,42 +3688,42 @@ class GeneratedParser(Parser):
         if (
             (token := self.continue_token())
         ):
-            return ( lambda token : ast . Continue ( token = token ) ) ( token );
+            return ast . Continue ( token = token );
         self._reset(mark)
         return None;
 
     @memoize
     def module(self) -> Optional[Any]:
-        # module: auto_generated_0__loop1_77 &(import_token) (!(import_token))? | (dot_token)* auto_generated_0__gather_79
+        # module: dot_token+ &import_token !import_token? | dot_token* dot_token.identifier+
         mark = self._mark()
         if (
-            (auto_generated_0__loop1_77 := self.auto_generated_0__loop1_77())
+            (_loop1_77 := self._loop1_77())
             and
             (self.positive_lookahead(self.import_token, ))
             and
             (opt := self.negative_lookahead(self.import_token, ),)
         ):
-            return ( lambda _loop1_77 , opt : [_loop1_77 , opt] ) ( auto_generated_0__loop1_77 , opt );
+            return [_loop1_77, opt];
         self._reset(mark)
         if (
-            (auto_generated_0__loop0_78 := self._loop0_17(),)
+            (_loop0_78 := self._loop0_78(),)
             and
-            (auto_generated_0__gather_79 := self.auto_generated_0__gather_79())
+            (_gather_79 := self._gather_79())
         ):
-            return ( lambda _loop0_78 , _gather_79 : [_loop0_78 , _gather_79] ) ( auto_generated_0__loop0_78 , auto_generated_0__gather_79 );
+            return [_loop0_78, _gather_79];
         self._reset(mark)
         return None;
 
     @memoize
     def import_stmt(self) -> Optional[Any]:
-        # import_stmt: import_token auto_generated_0__gather_81 | from_token module import_token auto_generated_0__gather_83 | from_token module import_token left_paren_token auto_generated_0__gather_85 (comma_token)? right_paren_token | from_token module import_token star_token
+        # import_stmt: import_token comma_token.(dot_token.identifier+ [as_token identifier])+ | from_token module import_token comma_token.(identifier [as_token identifier])+ | from_token module import_token left_paren_token comma_token.(identifier [as_token identifier])+ comma_token? right_paren_token | from_token module import_token star_token
         mark = self._mark()
         if (
             (token := self.import_token())
             and
-            (names := self.auto_generated_0__gather_81())
+            (names := self._gather_81())
         ):
-            return ( lambda token , names : ast . Import ( token = token , names = [ast . alias ( token = name [0] [0] , name = '.' . join ( [+ c for c in name [0]] ) , asname = + name [1] [1] if name [1] else None ) for name in names] ) ) ( token , names );
+            return ast . Import ( token = token , names = [ast . alias ( token = name [0] [0] , name = '.' . join ( [+ c for c in name [0]] ) , asname = + name [1] [1] if name [1] else None ) for name in names] );
         self._reset(mark)
         if (
             (token := self.from_token())
@@ -3737,9 +3732,9 @@ class GeneratedParser(Parser):
             and
             (self.import_token())
             and
-            (names := self.auto_generated_0__gather_83())
+            (names := self._gather_83())
         ):
-            return ( lambda token , module , names : ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = + name [0] , asname = + name [1] [1] if name [1] else None ) for name in names] , level = len ( module [0] ) ) ) ( token , module , names );
+            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = + name [0] , asname = + name [1] [1] if name [1] else None ) for name in names] , level = len ( module [0] ) );
         self._reset(mark)
         if (
             (token := self.from_token())
@@ -3750,13 +3745,13 @@ class GeneratedParser(Parser):
             and
             (self.left_paren_token())
             and
-            (names := self.auto_generated_0__gather_85())
+            (names := self._gather_85())
             and
             (self.comma_token(),)
             and
             (self.right_paren_token())
         ):
-            return ( lambda token , module , names : ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = + name [0] , asname = + name [1] [1] if name [1] else None ) for name in names] , level = len ( module [0] ) ) ) ( token , module , names );
+            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = + name [0] , asname = + name [1] [1] if name [1] else None ) for name in names] , level = len ( module [0] ) );
         self._reset(mark)
         if (
             (token := self.from_token())
@@ -3767,39 +3762,39 @@ class GeneratedParser(Parser):
             and
             (self.star_token())
         ):
-            return ( lambda token , module : ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = '*' )] , level = len ( module [0] ) ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 0 else char_parser . to_char_parser ( self ) . _error ( ) ) ( token , module );
+            return ast . ImportFrom ( token = token , module = '.' . join ( [+ c for c in module [1]] ) if module [1] else None , names = [ast . alias ( token = token , name = '*' )] , level = len ( module [0] ) ) if char_parser . to_char_parser ( self ) . _func_level [- 1] == 0 else char_parser . to_char_parser ( self ) . _error ( );
         self._reset(mark)
         return None;
 
     @memoize
     def global_stmt(self) -> Optional[Any]:
-        # global_stmt: global_token auto_generated_0__gather_87
+        # global_stmt: global_token comma_token.identifier+
         mark = self._mark()
         if (
             (token := self.global_token())
             and
-            (names := self.auto_generated_0__gather_87())
+            (names := self._gather_87())
         ):
-            return ( lambda token , names : ast . Global ( token = token , names = [+ name for name in names] ) ) ( token , names );
+            return ast . Global ( token = token , names = [+ name for name in names] );
         self._reset(mark)
         return None;
 
     @memoize
     def nonlocal_stmt(self) -> Optional[Any]:
-        # nonlocal_stmt: nonlocal_token auto_generated_0__gather_89
+        # nonlocal_stmt: nonlocal_token comma_token.identifier+
         mark = self._mark()
         if (
             (token := self.nonlocal_token())
             and
-            (names := self.auto_generated_0__gather_89())
+            (names := self._gather_89())
         ):
-            return ( lambda token , names : ast . Nonlocal ( token = token , names = [+ name for name in names] ) ) ( token , names );
+            return ast . Nonlocal ( token = token , names = [+ name for name in names] );
         self._reset(mark)
         return None;
 
     @memoize
     def type_stmt(self) -> Optional[Any]:
-        # type_stmt: type_token set_name (type_params)? assign_token expression
+        # type_stmt: type_token set_name type_params? assign_token expression
         mark = self._mark()
         if (
             (token := self.type_token())
@@ -3812,22 +3807,22 @@ class GeneratedParser(Parser):
             and
             (value := self.expression())
         ):
-            return ( lambda token , name , type_params , value : ast . TypeAlias ( token = token , name = name , type_params = + type_params if type_params else [] , value = value ) ) ( token , name , type_params , value );
+            return ast . TypeAlias ( token = token , name = name , type_params = + type_params if type_params else [] , value = value , );
         self._reset(mark)
         return None;
 
     @memoize
     def type_params(self) -> Optional[Any]:
-        # type_params: left_bracket_token auto_generated_0__gather_91 right_bracket_token
+        # type_params: left_bracket_token comma_token.type_param+ right_bracket_token
         mark = self._mark()
         if (
             (self.left_bracket_token())
             and
-            (params := self.auto_generated_0__gather_91())
+            (params := self._gather_91())
             and
             (self.right_bracket_token())
         ):
-            return ( lambda params : char_parser . to_char_parser ( self ) . _make_true ( params ) ) ( params );
+            return char_parser . to_char_parser ( self ) . _make_true ( params );
         self._reset(mark)
         return None;
 
@@ -3842,2067 +3837,278 @@ class GeneratedParser(Parser):
             and
             (bound := self.expression())
         ):
-            return ( lambda name , bound : ast . TypeVar ( token = name , name = + name , bound = bound ) ) ( name , bound );
+            return ast . TypeVar ( token = name , name = + name , bound = bound );
         self._reset(mark)
         if (
             (name := self.identifier())
         ):
-            return ( lambda name : ast . TypeVar ( token = name , name = + name ) ) ( name );
+            return ast . TypeVar ( token = name , name = + name );
         self._reset(mark)
         if (
             (self.star_token())
             and
             (name := self.identifier())
         ):
-            return ( lambda name : ast . TypeVarTuple ( token = name , name = + name ) ) ( name );
+            return ast . TypeVarTuple ( token = name , name = + name );
         self._reset(mark)
         if (
             (self.starstar_token())
             and
             (name := self.identifier())
         ):
-            return ( lambda name : ast . ParamSpec ( token = name , name = + name ) ) ( name );
+            return ast . ParamSpec ( token = name , name = + name );
         self._reset(mark)
         return None;
 
     @memoize
-    def auto_generated_0__loop0_2(self) -> Optional[Any]:
-        # auto_generated_0__loop0_2: ((auto_generated_0__tmp_93 spaces_not_in_brackets))*
-        # nullable=True
+    def _loop0_2(self) -> Optional[Any]:
+        # _loop0_2: (!r'$' new_line) spaces_not_in_brackets
         mark = self._mark()
-        if (
-            (_loop0_18 := self._loop0_18(),)
-        ):
-            return _loop0_18;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_1(self) -> Optional[Any]:
-        # auto_generated_0__gather_1: (auto_generated_0__tmp_93).(spaces_not_in_brackets)+
-        mark = self._mark()
-        if (
-            (_gather_19 := self._gather_19())
-        ):
-            return _gather_19;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_3(self) -> Optional[Any]:
-        # auto_generated_0__tmp_3: ':' 'append_str\x00f' start_stre_b str_end 'pop_str\x00f' | '\\}'
-        mark = self._mark()
-        if (
-            (literal := self.expect(':'))
+        children = []
+        while (
+            (self._tmp_93())
             and
-            (literal_1 := self.expect('append_str\x00f'))
+            (elem := self.spaces_not_in_brackets())
+        ):
+            children.append(elem)
+            mark = self._mark()
+        self._reset(mark)
+        return children;
+
+    @memoize
+    def _gather_1(self) -> Optional[Any]:
+        # _gather_1: spaces_not_in_brackets _loop0_2
+        mark = self._mark()
+        if (
+            (elem := self.spaces_not_in_brackets())
+            is not None
+            and
+            (seq := self._loop0_2())
+            is not None
+        ):
+            return [elem] + seq;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_3(self) -> Optional[Any]:
+        # _tmp_3: r':' 'append_str\0f' start_stre_b str_end 'pop_str\0f' | r'\}'
+        mark = self._mark()
+        if (
+            (literal := self.expect(r':'))
+            and
+            (literal_1 := self.expect('append_str\0f'))
             and
             (start_stre_b := self.start_stre_b())
             and
             (str_end := self.str_end())
             and
-            (literal_2 := self.expect('pop_str\x00f'))
+            (literal_2 := self.expect('pop_str\0f'))
         ):
-            return ( lambda literal , literal_1 , start_stre_b , str_end , literal_2 : [literal , literal_1 , start_stre_b , str_end , literal_2] ) ( literal , literal_1 , start_stre_b , str_end , literal_2 );
+            return [literal, literal_1, start_stre_b, str_end, literal_2];
         self._reset(mark)
         if (
-            (literal := self.expect('\\}'))
+            (literal := self.expect(r'\}'))
         ):
-            return ( lambda literal : literal ) ( literal );
+            return literal;
         self._reset(mark)
         return None;
 
     @memoize
-    def auto_generated_0__loop1_4(self) -> Optional[Any]:
-        # auto_generated_0__loop1_4: (auto_generated_0__tmp_94)*
-        # nullable=True
+    def _loop1_4(self) -> Optional[Any]:
+        # _loop1_4: (str_with_prefix spaces)
         mark = self._mark()
-        if (
-            (_loop0_21 := self._loop0_21(),)
+        children = []
+        while (
+            (_tmp_94 := self._tmp_94())
         ):
-            return _loop0_21;
+            children.append(_tmp_94)
+            mark = self._mark()
         self._reset(mark)
-        return None;
+        return children;
 
     @memoize
-    def auto_generated_0__tmp_5(self) -> Optional[Any]:
-        # auto_generated_0__tmp_5: pointfloat | digitpart
+    def _tmp_5(self) -> Optional[Any]:
+        # _tmp_5: pointfloat | digitpart
         mark = self._mark()
         if (
             (pointfloat := self.pointfloat())
         ):
-            return ( lambda pointfloat : pointfloat ) ( pointfloat );
+            return pointfloat;
         self._reset(mark)
         if (
             (digitpart := self.digitpart())
         ):
-            return ( lambda digitpart : digitpart ) ( digitpart );
+            return digitpart;
         self._reset(mark)
         return None;
 
     @memoize
-    def auto_generated_0__tmp_6(self) -> Optional[Any]:
-        # auto_generated_0__tmp_6: floatnumber | digitpart
+    def _tmp_6(self) -> Optional[Any]:
+        # _tmp_6: floatnumber | digitpart
         mark = self._mark()
         if (
             (floatnumber := self.floatnumber())
         ):
-            return ( lambda floatnumber : floatnumber ) ( floatnumber );
+            return floatnumber;
         self._reset(mark)
         if (
             (digitpart := self.digitpart())
         ):
-            return ( lambda digitpart : digitpart ) ( digitpart );
+            return digitpart;
         self._reset(mark)
         return None;
 
     @memoize
-    def auto_generated_0__tmp_7(self) -> Optional[Any]:
-        # auto_generated_0__tmp_7: colon_token (expression)?
+    def _tmp_7(self) -> Optional[Any]:
+        # _tmp_7: colon_token expression?
         mark = self._mark()
         if (
             (colon_token := self.colon_token())
             and
             (opt := self.expression(),)
         ):
-            return ( lambda colon_token , opt : [colon_token , opt] ) ( colon_token , opt );
+            return [colon_token, opt];
         self._reset(mark)
         return None;
-
-    @memoize
-    def auto_generated_0__loop0_9(self) -> Optional[Any]:
-        # auto_generated_0__loop0_9: ((comma_token sub_item))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_22 := self._loop0_22(),)
-        ):
-            return _loop0_22;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_8(self) -> Optional[Any]:
-        # auto_generated_0__gather_8: (comma_token).(sub_item)+
-        mark = self._mark()
-        if (
-            (_gather_23 := self._gather_23())
-        ):
-            return _gather_23;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_10(self) -> Optional[Any]:
-        # auto_generated_0__loop1_10: (auto_generated_0__tmp_95)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_25 := self._loop0_25(),)
-        ):
-            return _loop0_25;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_12(self) -> Optional[Any]:
-        # auto_generated_0__loop0_12: ((comma_token display_item))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_26 := self._loop0_26(),)
-        ):
-            return _loop0_26;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_11(self) -> Optional[Any]:
-        # auto_generated_0__gather_11: (comma_token).(display_item)+
-        mark = self._mark()
-        if (
-            (_gather_27 := self._gather_27())
-        ):
-            return _gather_27;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_14(self) -> Optional[Any]:
-        # auto_generated_0__loop0_14: ((comma_token dict_display_item))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_29 := self._loop0_29(),)
-        ):
-            return _loop0_29;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_13(self) -> Optional[Any]:
-        # auto_generated_0__gather_13: (comma_token).(dict_display_item)+
-        mark = self._mark()
-        if (
-            (_gather_30 := self._gather_30())
-        ):
-            return _gather_30;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_15(self) -> Optional[Any]:
-        # auto_generated_0__tmp_15: auto_generated_0__gather_96 (comma_token)?
-        mark = self._mark()
-        if (
-            (auto_generated_0__gather_96 := self.auto_generated_0__gather_96())
-            and
-            (opt := self.comma_token(),)
-        ):
-            return ( lambda _gather_96 , opt : [_gather_96 , opt] ) ( auto_generated_0__gather_96 , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_16(self) -> Optional[Any]:
-        # auto_generated_0__tmp_16: walrus_expression comp_for | call_args
-        mark = self._mark()
-        if (
-            (walrus_expression := self.walrus_expression())
-            and
-            (comp_for := self.comp_for())
-        ):
-            return ( lambda walrus_expression , comp_for : [walrus_expression , comp_for] ) ( walrus_expression , comp_for );
-        self._reset(mark)
-        if (
-            (call_args := self.call_args())
-        ):
-            return ( lambda call_args : call_args ) ( call_args );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_17(self) -> Optional[Any]:
-        # auto_generated_0__loop0_17: (suffix)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_32 := self._loop0_32(),)
-        ):
-            return _loop0_32;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_18(self) -> Optional[Any]:
-        # auto_generated_0__tmp_18: starstar_token u_expr
-        mark = self._mark()
-        if (
-            (starstar_token := self.starstar_token())
-            and
-            (u_expr := self.u_expr())
-        ):
-            return ( lambda starstar_token , u_expr : [starstar_token , u_expr] ) ( starstar_token , u_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_19(self) -> Optional[Any]:
-        # auto_generated_0__loop0_19: (auto_generated_0__tmp_98)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_33 := self._loop0_33(),)
-        ):
-            return _loop0_33;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_20(self) -> Optional[Any]:
-        # auto_generated_0__loop0_20: (auto_generated_0__tmp_99)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_34 := self._loop0_34(),)
-        ):
-            return _loop0_34;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_21(self) -> Optional[Any]:
-        # auto_generated_0__loop0_21: (auto_generated_0__tmp_100)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_35 := self._loop0_35(),)
-        ):
-            return _loop0_35;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_22(self) -> Optional[Any]:
-        # auto_generated_0__loop0_22: (auto_generated_0__tmp_101)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_36 := self._loop0_36(),)
-        ):
-            return _loop0_36;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_23(self) -> Optional[Any]:
-        # auto_generated_0__loop0_23: (auto_generated_0__tmp_102)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_37 := self._loop0_37(),)
-        ):
-            return _loop0_37;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_24(self) -> Optional[Any]:
-        # auto_generated_0__loop0_24: (auto_generated_0__tmp_103)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_38 := self._loop0_38(),)
-        ):
-            return _loop0_38;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_25(self) -> Optional[Any]:
-        # auto_generated_0__loop0_25: (auto_generated_0__tmp_104)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_39 := self._loop0_39(),)
-        ):
-            return _loop0_39;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_26(self) -> Optional[Any]:
-        # auto_generated_0__loop0_26: (auto_generated_0__tmp_105)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_40 := self._loop0_40(),)
-        ):
-            return _loop0_40;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_27(self) -> Optional[Any]:
-        # auto_generated_0__loop0_27: (auto_generated_0__tmp_106)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_41 := self._loop0_41(),)
-        ):
-            return _loop0_41;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_28(self) -> Optional[Any]:
-        # auto_generated_0__tmp_28: if_token ready_to_if_expr else_token expression
-        mark = self._mark()
-        if (
-            (if_token := self.if_token())
-            and
-            (ready_to_if_expr := self.ready_to_if_expr())
-            and
-            (else_token := self.else_token())
-            and
-            (expression := self.expression())
-        ):
-            return ( lambda if_token , ready_to_if_expr , else_token , expression : [if_token , ready_to_if_expr , else_token , expression] ) ( if_token , ready_to_if_expr , else_token , expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_30(self) -> Optional[Any]:
-        # auto_generated_0__loop0_30: ((comma_token tupled_expression_item))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_42 := self._loop0_42(),)
-        ):
-            return _loop0_42;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_29(self) -> Optional[Any]:
-        # auto_generated_0__gather_29: (comma_token).(tupled_expression_item)+
-        mark = self._mark()
-        if (
-            (_gather_43 := self._gather_43())
-        ):
-            return _gather_43;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_31(self) -> Optional[Any]:
-        # auto_generated_0__tmp_31: set_name walrus_token
-        mark = self._mark()
-        if (
-            (set_name := self.set_name())
-            and
-            (walrus_token := self.walrus_token())
-        ):
-            return ( lambda set_name , walrus_token : [set_name , walrus_token] ) ( set_name , walrus_token );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_33(self) -> Optional[Any]:
-        # auto_generated_0__loop0_33: ((semicolon_token simple_stmt))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_45 := self._loop0_45(),)
-        ):
-            return _loop0_45;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_32(self) -> Optional[Any]:
-        # auto_generated_0__gather_32: (semicolon_token).(simple_stmt)+
-        mark = self._mark()
-        if (
-            (_gather_46 := self._gather_46())
-        ):
-            return _gather_46;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_34(self) -> Optional[Any]:
-        # auto_generated_0__loop1_34: (line)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_48 := self._loop0_48(),)
-        ):
-            return _loop0_48;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_35(self) -> Optional[Any]:
-        # auto_generated_0__loop0_35: (line)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_49 := self._loop0_49(),)
-        ):
-            return _loop0_49;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_36(self) -> Optional[Any]:
-        # auto_generated_0__loop0_36: (auto_generated_0__tmp_107)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_50 := self._loop0_50(),)
-        ):
-            return _loop0_50;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_37(self) -> Optional[Any]:
-        # auto_generated_0__tmp_37: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_38(self) -> Optional[Any]:
-        # auto_generated_0__tmp_38: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_39(self) -> Optional[Any]:
-        # auto_generated_0__tmp_39: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_40(self) -> Optional[Any]:
-        # auto_generated_0__tmp_40: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_41(self) -> Optional[Any]:
-        # auto_generated_0__tmp_41: try_group | try_except | try_finally
-        mark = self._mark()
-        if (
-            (try_group := self.try_group())
-        ):
-            return ( lambda try_group : try_group ) ( try_group );
-        self._reset(mark)
-        if (
-            (try_except := self.try_except())
-        ):
-            return ( lambda try_except : try_except ) ( try_except );
-        self._reset(mark)
-        if (
-            (try_finally := self.try_finally())
-        ):
-            return ( lambda try_finally : try_finally ) ( try_finally );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_42(self) -> Optional[Any]:
-        # auto_generated_0__loop1_42: (except_colon)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_51 := self._loop0_51(),)
-        ):
-            return _loop0_51;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_43(self) -> Optional[Any]:
-        # auto_generated_0__tmp_43: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_44(self) -> Optional[Any]:
-        # auto_generated_0__tmp_44: indent finally_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (finally_token := self.finally_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , finally_token , colon_and_body : [indent , finally_token , colon_and_body] ) ( indent , finally_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_45(self) -> Optional[Any]:
-        # auto_generated_0__loop1_45: (except_star)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_52 := self._loop0_52(),)
-        ):
-            return _loop0_52;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_46(self) -> Optional[Any]:
-        # auto_generated_0__tmp_46: indent else_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (else_token := self.else_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , else_token , colon_and_body : [indent , else_token , colon_and_body] ) ( indent , else_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_47(self) -> Optional[Any]:
-        # auto_generated_0__tmp_47: indent finally_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (finally_token := self.finally_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , finally_token , colon_and_body : [indent , finally_token , colon_and_body] ) ( indent , finally_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_48(self) -> Optional[Any]:
-        # auto_generated_0__loop0_48: (!(''))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_53 := self._loop0_53(),)
-        ):
-            return _loop0_53;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_49(self) -> Optional[Any]:
-        # auto_generated_0__loop0_49: (!(''))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_54 := self._loop0_54(),)
-        ):
-            return _loop0_54;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_50(self) -> Optional[Any]:
-        # auto_generated_0__tmp_50: indent finally_token colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (finally_token := self.finally_token())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , finally_token , colon_and_body : [indent , finally_token , colon_and_body] ) ( indent , finally_token , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_51(self) -> Optional[Any]:
-        # auto_generated_0__tmp_51: expression (auto_generated_0__tmp_108)?
-        mark = self._mark()
-        if (
-            (expression := self.expression())
-            and
-            (opt := self.auto_generated_0__tmp_108(),)
-        ):
-            return ( lambda expression , opt : [expression , opt] ) ( expression , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_52(self) -> Optional[Any]:
-        # auto_generated_0__tmp_52: expression (auto_generated_0__tmp_109)?
-        mark = self._mark()
-        if (
-            (expression := self.expression())
-            and
-            (opt := self.auto_generated_0__tmp_109(),)
-        ):
-            return ( lambda expression , opt : [expression , opt] ) ( expression , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_54(self) -> Optional[Any]:
-        # auto_generated_0__loop0_54: ((comma_token auto_generated_0__tmp_110))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_55 := self._loop0_55(),)
-        ):
-            return _loop0_55;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_53(self) -> Optional[Any]:
-        # auto_generated_0__gather_53: (comma_token).(auto_generated_0__tmp_110)+
-        mark = self._mark()
-        if (
-            (_gather_56 := self._gather_56())
-        ):
-            return _gather_56;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_56(self) -> Optional[Any]:
-        # auto_generated_0__loop0_56: ((comma_token auto_generated_0__tmp_111))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_58 := self._loop0_58(),)
-        ):
-            return _loop0_58;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_55(self) -> Optional[Any]:
-        # auto_generated_0__gather_55: (comma_token).(auto_generated_0__tmp_111)+
-        mark = self._mark()
-        if (
-            (_gather_59 := self._gather_59())
-        ):
-            return _gather_59;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_57(self) -> Optional[Any]:
-        # auto_generated_0__tmp_57: left_paren_token call_args right_paren_token
-        mark = self._mark()
-        if (
-            (left_paren_token := self.left_paren_token())
-            and
-            (call_args := self.call_args())
-            and
-            (right_paren_token := self.right_paren_token())
-        ):
-            return ( lambda left_paren_token , call_args , right_paren_token : [left_paren_token , call_args , right_paren_token] ) ( left_paren_token , call_args , right_paren_token );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_58(self) -> Optional[Any]:
-        # auto_generated_0__tmp_58: assign_token expression
-        mark = self._mark()
-        if (
-            (assign_token := self.assign_token())
-            and
-            (expression := self.expression())
-        ):
-            return ( lambda assign_token , expression : [assign_token , expression] ) ( assign_token , expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_59(self) -> Optional[Any]:
-        # auto_generated_0__loop0_59: (auto_generated_0__tmp_112)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_61 := self._loop0_61(),)
-        ):
-            return _loop0_61;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_60(self) -> Optional[Any]:
-        # auto_generated_0__tmp_60: comma_token (parameter_starstar)?
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (opt := self.parameter_starstar(),)
-        ):
-            return ( lambda comma_token , opt : [comma_token , opt] ) ( comma_token , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_62(self) -> Optional[Any]:
-        # auto_generated_0__loop0_62: ((comma_token defparameter))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_62 := self._loop0_62(),)
-        ):
-            return _loop0_62;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_61(self) -> Optional[Any]:
-        # auto_generated_0__gather_61: (comma_token).(defparameter)+
-        mark = self._mark()
-        if (
-            (_gather_63 := self._gather_63())
-        ):
-            return _gather_63;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_63(self) -> Optional[Any]:
-        # auto_generated_0__tmp_63: comma_token (parameter_list_starargs)?
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (opt := self.parameter_list_starargs(),)
-        ):
-            return ( lambda comma_token , opt : [comma_token , opt] ) ( comma_token , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_65(self) -> Optional[Any]:
-        # auto_generated_0__loop0_65: ((comma_token defparameter))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_65 := self._loop0_65(),)
-        ):
-            return _loop0_65;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_64(self) -> Optional[Any]:
-        # auto_generated_0__gather_64: (comma_token).(defparameter)+
-        mark = self._mark()
-        if (
-            (_gather_66 := self._gather_66())
-        ):
-            return _gather_66;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_66(self) -> Optional[Any]:
-        # auto_generated_0__tmp_66: comma_token (parameter_list_no_posonly)?
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (opt := self.parameter_list_no_posonly(),)
-        ):
-            return ( lambda comma_token , opt : [comma_token , opt] ) ( comma_token , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_67(self) -> Optional[Any]:
-        # auto_generated_0__loop0_67: (decorator_or_spaces)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_68 := self._loop0_68(),)
-        ):
-            return _loop0_68;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_68(self) -> Optional[Any]:
-        # auto_generated_0__tmp_68: returns_token expression
-        mark = self._mark()
-        if (
-            (returns_token := self.returns_token())
-            and
-            (expression := self.expression())
-        ):
-            return ( lambda returns_token , expression : [returns_token , expression] ) ( returns_token , expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_70(self) -> Optional[Any]:
-        # auto_generated_0__loop0_70: ((comma_token set_array_target))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_69 := self._loop0_69(),)
-        ):
-            return _loop0_69;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_69(self) -> Optional[Any]:
-        # auto_generated_0__gather_69: (comma_token).(set_array_target)+
-        mark = self._mark()
-        if (
-            (_gather_70 := self._gather_70())
-        ):
-            return _gather_70;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_72(self) -> Optional[Any]:
-        # auto_generated_0__loop0_72: ((comma_token del_array_target))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_72 := self._loop0_72(),)
-        ):
-            return _loop0_72;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_71(self) -> Optional[Any]:
-        # auto_generated_0__gather_71: (comma_token).(del_array_target)+
-        mark = self._mark()
-        if (
-            (_gather_73 := self._gather_73())
-        ):
-            return _gather_73;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_73(self) -> Optional[Any]:
-        # auto_generated_0__loop1_73: (auto_generated_0__tmp_113)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_75 := self._loop0_75(),)
-        ):
-            return _loop0_75;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_74(self) -> Optional[Any]:
-        # auto_generated_0__tmp_74: assign_token yield_expression
-        mark = self._mark()
-        if (
-            (assign_token := self.assign_token())
-            and
-            (yield_expression := self.yield_expression())
-        ):
-            return ( lambda assign_token , yield_expression : [assign_token , yield_expression] ) ( assign_token , yield_expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_75(self) -> Optional[Any]:
-        # auto_generated_0__tmp_75: comma_token expression
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (expression := self.expression())
-        ):
-            return ( lambda comma_token , expression : [comma_token , expression] ) ( comma_token , expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_76(self) -> Optional[Any]:
-        # auto_generated_0__tmp_76: expression (auto_generated_0__tmp_114)?
-        mark = self._mark()
-        if (
-            (expression := self.expression())
-            and
-            (opt := self.auto_generated_0__tmp_114(),)
-        ):
-            return ( lambda expression , opt : [expression , opt] ) ( expression , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop1_77(self) -> Optional[Any]:
-        # auto_generated_0__loop1_77: (dot_token)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_76 := self._loop0_76(),)
-        ):
-            return _loop0_76;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_78(self) -> Optional[Any]:
-        # auto_generated_0__loop0_78: (dot_token)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_77 := self._loop0_77(),)
-        ):
-            return _loop0_77;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_80(self) -> Optional[Any]:
-        # auto_generated_0__loop0_80: ((dot_token identifier))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_78 := self._loop0_78(),)
-        ):
-            return _loop0_78;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_79(self) -> Optional[Any]:
-        # auto_generated_0__gather_79: (dot_token).(identifier)+
-        mark = self._mark()
-        if (
-            (_gather_79 := self._gather_79())
-        ):
-            return _gather_79;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_82(self) -> Optional[Any]:
-        # auto_generated_0__loop0_82: ((comma_token auto_generated_0__tmp_115))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_81 := self._loop0_81(),)
-        ):
-            return _loop0_81;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_81(self) -> Optional[Any]:
-        # auto_generated_0__gather_81: (comma_token).(auto_generated_0__tmp_115)+
-        mark = self._mark()
-        if (
-            (_gather_82 := self._gather_82())
-        ):
-            return _gather_82;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_84(self) -> Optional[Any]:
-        # auto_generated_0__loop0_84: ((comma_token auto_generated_0__tmp_116))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_84 := self._loop0_84(),)
-        ):
-            return _loop0_84;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_83(self) -> Optional[Any]:
-        # auto_generated_0__gather_83: (comma_token).(auto_generated_0__tmp_116)+
-        mark = self._mark()
-        if (
-            (_gather_85 := self._gather_85())
-        ):
-            return _gather_85;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_86(self) -> Optional[Any]:
-        # auto_generated_0__loop0_86: ((comma_token auto_generated_0__tmp_117))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_87 := self._loop0_87(),)
-        ):
-            return _loop0_87;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_85(self) -> Optional[Any]:
-        # auto_generated_0__gather_85: (comma_token).(auto_generated_0__tmp_117)+
-        mark = self._mark()
-        if (
-            (_gather_88 := self._gather_88())
-        ):
-            return _gather_88;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_88(self) -> Optional[Any]:
-        # auto_generated_0__loop0_88: ((comma_token identifier))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_90 := self._loop0_90(),)
-        ):
-            return _loop0_90;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_87(self) -> Optional[Any]:
-        # auto_generated_0__gather_87: (comma_token).(identifier)+
-        mark = self._mark()
-        if (
-            (_gather_91 := self._gather_91())
-        ):
-            return _gather_91;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_90(self) -> Optional[Any]:
-        # auto_generated_0__loop0_90: ((comma_token identifier))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_93 := self._loop0_93(),)
-        ):
-            return _loop0_93;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_89(self) -> Optional[Any]:
-        # auto_generated_0__gather_89: (comma_token).(identifier)+
-        mark = self._mark()
-        if (
-            (_gather_94 := self._gather_94())
-        ):
-            return _gather_94;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_92(self) -> Optional[Any]:
-        # auto_generated_0__loop0_92: ((comma_token type_param))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_96 := self._loop0_96(),)
-        ):
-            return _loop0_96;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_91(self) -> Optional[Any]:
-        # auto_generated_0__gather_91: (comma_token).(type_param)+
-        mark = self._mark()
-        if (
-            (_gather_97 := self._gather_97())
-        ):
-            return _gather_97;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_93(self) -> Optional[Any]:
-        # auto_generated_0__tmp_93: !('$') new_line
-        mark = self._mark()
-        if (
-            (self.negative_lookahead(self.expect, '$'))
-            and
-            (new_line := self.new_line())
-        ):
-            return ( lambda new_line : new_line ) ( new_line );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_94(self) -> Optional[Any]:
-        # auto_generated_0__tmp_94: str_with_prefix spaces
-        mark = self._mark()
-        if (
-            (str_with_prefix := self.str_with_prefix())
-            and
-            (spaces := self.spaces())
-        ):
-            return ( lambda str_with_prefix , spaces : [str_with_prefix , spaces] ) ( str_with_prefix , spaces );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_95(self) -> Optional[Any]:
-        # auto_generated_0__tmp_95: (async_token)? for_token set_multiple_targets in_token ready_to_if_expr (auto_generated_0__tmp_126)*
-        mark = self._mark()
-        if (
-            (opt := self.async_token(),)
-            and
-            (for_token := self.for_token())
-            and
-            (set_multiple_targets := self.set_multiple_targets())
-            and
-            (in_token := self.in_token())
-            and
-            (ready_to_if_expr := self.ready_to_if_expr())
-            and
-            (auto_generated_0__loop0_118 := self._loop0_99(),)
-        ):
-            return ( lambda opt , for_token , set_multiple_targets , in_token , ready_to_if_expr , _loop0_118 : [opt , for_token , set_multiple_targets , in_token , ready_to_if_expr , _loop0_118] ) ( opt , for_token , set_multiple_targets , in_token , ready_to_if_expr , auto_generated_0__loop0_118 );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_97(self) -> Optional[Any]:
-        # auto_generated_0__loop0_97: ((comma_token call_arg))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_100 := self._loop0_100(),)
-        ):
-            return _loop0_100;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_96(self) -> Optional[Any]:
-        # auto_generated_0__gather_96: (comma_token).(call_arg)+
-        mark = self._mark()
-        if (
-            (_gather_101 := self._gather_101())
-        ):
-            return _gather_101;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_98(self) -> Optional[Any]:
-        # auto_generated_0__tmp_98: m_token u_expr
-        mark = self._mark()
-        if (
-            (m_token := self.m_token())
-            and
-            (u_expr := self.u_expr())
-        ):
-            return ( lambda m_token , u_expr : [m_token , u_expr] ) ( m_token , u_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_99(self) -> Optional[Any]:
-        # auto_generated_0__tmp_99: a_token m_expr
-        mark = self._mark()
-        if (
-            (a_token := self.a_token())
-            and
-            (m_expr := self.m_expr())
-        ):
-            return ( lambda a_token , m_expr : [a_token , m_expr] ) ( a_token , m_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_100(self) -> Optional[Any]:
-        # auto_generated_0__tmp_100: shift_token a_expr
-        mark = self._mark()
-        if (
-            (shift_token := self.shift_token())
-            and
-            (a_expr := self.a_expr())
-        ):
-            return ( lambda shift_token , a_expr : [shift_token , a_expr] ) ( shift_token , a_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_101(self) -> Optional[Any]:
-        # auto_generated_0__tmp_101: bit_and_token shift_expr
-        mark = self._mark()
-        if (
-            (bit_and_token := self.bit_and_token())
-            and
-            (shift_expr := self.shift_expr())
-        ):
-            return ( lambda bit_and_token , shift_expr : [bit_and_token , shift_expr] ) ( bit_and_token , shift_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_102(self) -> Optional[Any]:
-        # auto_generated_0__tmp_102: bit_xor_token and_expr
-        mark = self._mark()
-        if (
-            (bit_xor_token := self.bit_xor_token())
-            and
-            (and_expr := self.and_expr())
-        ):
-            return ( lambda bit_xor_token , and_expr : [bit_xor_token , and_expr] ) ( bit_xor_token , and_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_103(self) -> Optional[Any]:
-        # auto_generated_0__tmp_103: bit_or_token xor_expr
-        mark = self._mark()
-        if (
-            (bit_or_token := self.bit_or_token())
-            and
-            (xor_expr := self.xor_expr())
-        ):
-            return ( lambda bit_or_token , xor_expr : [bit_or_token , xor_expr] ) ( bit_or_token , xor_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_104(self) -> Optional[Any]:
-        # auto_generated_0__tmp_104: comp_operator ready_to_be_starred_expr
-        mark = self._mark()
-        if (
-            (comp_operator := self.comp_operator())
-            and
-            (ready_to_be_starred_expr := self.ready_to_be_starred_expr())
-        ):
-            return ( lambda comp_operator , ready_to_be_starred_expr : [comp_operator , ready_to_be_starred_expr] ) ( comp_operator , ready_to_be_starred_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_105(self) -> Optional[Any]:
-        # auto_generated_0__tmp_105: and_token not_test
-        mark = self._mark()
-        if (
-            (and_token := self.and_token())
-            and
-            (not_test := self.not_test())
-        ):
-            return ( lambda and_token , not_test : [and_token , not_test] ) ( and_token , not_test );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_106(self) -> Optional[Any]:
-        # auto_generated_0__tmp_106: or_token and_test
-        mark = self._mark()
-        if (
-            (or_token := self.or_token())
-            and
-            (and_test := self.and_test())
-        ):
-            return ( lambda or_token , and_test : [or_token , and_test] ) ( or_token , and_test );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_107(self) -> Optional[Any]:
-        # auto_generated_0__tmp_107: indent elif_token walrus_expression colon_and_body
-        mark = self._mark()
-        if (
-            (indent := self.indent())
-            and
-            (elif_token := self.elif_token())
-            and
-            (walrus_expression := self.walrus_expression())
-            and
-            (colon_and_body := self.colon_and_body())
-        ):
-            return ( lambda indent , elif_token , walrus_expression , colon_and_body : [indent , elif_token , walrus_expression , colon_and_body] ) ( indent , elif_token , walrus_expression , colon_and_body );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_108(self) -> Optional[Any]:
-        # auto_generated_0__tmp_108: as_token identifier
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (identifier := self.identifier())
-        ):
-            return ( lambda as_token , identifier : [as_token , identifier] ) ( as_token , identifier );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_109(self) -> Optional[Any]:
-        # auto_generated_0__tmp_109: as_token identifier
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (identifier := self.identifier())
-        ):
-            return ( lambda as_token , identifier : [as_token , identifier] ) ( as_token , identifier );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_110(self) -> Optional[Any]:
-        # auto_generated_0__tmp_110: expression (auto_generated_0__tmp_119)?
-        mark = self._mark()
-        if (
-            (expression := self.expression())
-            and
-            (opt := self.auto_generated_0__tmp_119(),)
-        ):
-            return ( lambda expression , opt : [expression , opt] ) ( expression , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_111(self) -> Optional[Any]:
-        # auto_generated_0__tmp_111: expression (auto_generated_0__tmp_120)?
-        mark = self._mark()
-        if (
-            (expression := self.expression())
-            and
-            (opt := self.auto_generated_0__tmp_120(),)
-        ):
-            return ( lambda expression , opt : [expression , opt] ) ( expression , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_112(self) -> Optional[Any]:
-        # auto_generated_0__tmp_112: comma_token defparameter
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (defparameter := self.defparameter())
-        ):
-            return ( lambda comma_token , defparameter : [comma_token , defparameter] ) ( comma_token , defparameter );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_113(self) -> Optional[Any]:
-        # auto_generated_0__tmp_113: set_multiple_targets assign_token
-        mark = self._mark()
-        if (
-            (set_multiple_targets := self.set_multiple_targets())
-            and
-            (assign_token := self.assign_token())
-        ):
-            return ( lambda set_multiple_targets , assign_token : [set_multiple_targets , assign_token] ) ( set_multiple_targets , assign_token );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_114(self) -> Optional[Any]:
-        # auto_generated_0__tmp_114: from_token expression
-        mark = self._mark()
-        if (
-            (from_token := self.from_token())
-            and
-            (expression := self.expression())
-        ):
-            return ( lambda from_token , expression : [from_token , expression] ) ( from_token , expression );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_115(self) -> Optional[Any]:
-        # auto_generated_0__tmp_115: auto_generated_0__gather_121 (auto_generated_0__tmp_123)?
-        mark = self._mark()
-        if (
-            (auto_generated_0__gather_121 := self.auto_generated_0__gather_121())
-            and
-            (opt := self.auto_generated_0__tmp_123(),)
-        ):
-            return ( lambda _gather_121 , opt : [_gather_121 , opt] ) ( auto_generated_0__gather_121 , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_116(self) -> Optional[Any]:
-        # auto_generated_0__tmp_116: identifier (auto_generated_0__tmp_124)?
-        mark = self._mark()
-        if (
-            (identifier := self.identifier())
-            and
-            (opt := self.auto_generated_0__tmp_124(),)
-        ):
-            return ( lambda identifier , opt : [identifier , opt] ) ( identifier , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_117(self) -> Optional[Any]:
-        # auto_generated_0__tmp_117: identifier (auto_generated_0__tmp_125)?
-        mark = self._mark()
-        if (
-            (identifier := self.identifier())
-            and
-            (opt := self.auto_generated_0__tmp_125(),)
-        ):
-            return ( lambda identifier , opt : [identifier , opt] ) ( identifier , opt );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_118(self) -> Optional[Any]:
-        # auto_generated_0__loop0_118: (auto_generated_0__tmp_126)*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_103 := self._loop0_103(),)
-        ):
-            return _loop0_103;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_119(self) -> Optional[Any]:
-        # auto_generated_0__tmp_119: as_token set_array_target
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (set_array_target := self.set_array_target())
-        ):
-            return ( lambda as_token , set_array_target : [as_token , set_array_target] ) ( as_token , set_array_target );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_120(self) -> Optional[Any]:
-        # auto_generated_0__tmp_120: as_token set_array_target
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (set_array_target := self.set_array_target())
-        ):
-            return ( lambda as_token , set_array_target : [as_token , set_array_target] ) ( as_token , set_array_target );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__loop0_122(self) -> Optional[Any]:
-        # auto_generated_0__loop0_122: ((dot_token identifier))*
-        # nullable=True
-        mark = self._mark()
-        if (
-            (_loop0_104 := self._loop0_104(),)
-        ):
-            return _loop0_104;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__gather_121(self) -> Optional[Any]:
-        # auto_generated_0__gather_121: (dot_token).(identifier)+
-        mark = self._mark()
-        if (
-            (_gather_105 := self._gather_105())
-        ):
-            return _gather_105;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_123(self) -> Optional[Any]:
-        # auto_generated_0__tmp_123: as_token identifier
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (identifier := self.identifier())
-        ):
-            return ( lambda as_token , identifier : [as_token , identifier] ) ( as_token , identifier );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_124(self) -> Optional[Any]:
-        # auto_generated_0__tmp_124: as_token identifier
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (identifier := self.identifier())
-        ):
-            return ( lambda as_token , identifier : [as_token , identifier] ) ( as_token , identifier );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_125(self) -> Optional[Any]:
-        # auto_generated_0__tmp_125: as_token identifier
-        mark = self._mark()
-        if (
-            (as_token := self.as_token())
-            and
-            (identifier := self.identifier())
-        ):
-            return ( lambda as_token , identifier : [as_token , identifier] ) ( as_token , identifier );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def auto_generated_0__tmp_126(self) -> Optional[Any]:
-        # auto_generated_0__tmp_126: if_token ready_to_if_expr
-        mark = self._mark()
-        if (
-            (if_token := self.if_token())
-            and
-            (ready_to_if_expr := self.ready_to_if_expr())
-        ):
-            return ( lambda if_token , ready_to_if_expr : [if_token , ready_to_if_expr] ) ( if_token , ready_to_if_expr );
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _loop0_1(self) -> Optional[Any]:
-        # _loop0_1: (suffix)
-        mark = self._mark()
-        children = []
-        while (
-            (suffix := self.suffix())
-        ):
-            children.append(suffix)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_2(self) -> Optional[Any]:
-        # _loop0_2: (auto_generated_0__tmp_98)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_98 := self.auto_generated_0__tmp_98())
-        ):
-            children.append(auto_generated_0__tmp_98)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_3(self) -> Optional[Any]:
-        # _loop0_3: (auto_generated_0__tmp_99)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_99 := self.auto_generated_0__tmp_99())
-        ):
-            children.append(auto_generated_0__tmp_99)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_4(self) -> Optional[Any]:
-        # _loop0_4: (auto_generated_0__tmp_100)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_100 := self.auto_generated_0__tmp_100())
-        ):
-            children.append(auto_generated_0__tmp_100)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_5(self) -> Optional[Any]:
-        # _loop0_5: (auto_generated_0__tmp_101)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_101 := self.auto_generated_0__tmp_101())
-        ):
-            children.append(auto_generated_0__tmp_101)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_6(self) -> Optional[Any]:
-        # _loop0_6: (auto_generated_0__tmp_102)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_102 := self.auto_generated_0__tmp_102())
-        ):
-            children.append(auto_generated_0__tmp_102)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_7(self) -> Optional[Any]:
-        # _loop0_7: (auto_generated_0__tmp_103)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_103 := self.auto_generated_0__tmp_103())
-        ):
-            children.append(auto_generated_0__tmp_103)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_8(self) -> Optional[Any]:
-        # _loop0_8: (auto_generated_0__tmp_104)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_104 := self.auto_generated_0__tmp_104())
-        ):
-            children.append(auto_generated_0__tmp_104)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
 
     @memoize
     def _loop0_9(self) -> Optional[Any]:
-        # _loop0_9: (auto_generated_0__tmp_105)
+        # _loop0_9: comma_token sub_item
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_105 := self.auto_generated_0__tmp_105())
+            (self.comma_token())
+            and
+            (elem := self.sub_item())
         ):
-            children.append(auto_generated_0__tmp_105)
+            children.append(elem)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_10(self) -> Optional[Any]:
-        # _loop0_10: (auto_generated_0__tmp_106)
+    def _gather_8(self) -> Optional[Any]:
+        # _gather_8: sub_item _loop0_9
         mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_106 := self.auto_generated_0__tmp_106())
+        if (
+            (elem := self.sub_item())
+            is not None
+            and
+            (seq := self._loop0_9())
+            is not None
         ):
-            children.append(auto_generated_0__tmp_106)
-            mark = self._mark()
+            return [elem] + seq;
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_11(self) -> Optional[Any]:
-        # _loop0_11: (line)
+    def _loop1_10(self) -> Optional[Any]:
+        # _loop1_10: (async_token? for_token set_multiple_targets in_token ready_to_if_expr ((if_token ready_to_if_expr))*)
         mark = self._mark()
         children = []
         while (
-            (line := self.line())
+            (_tmp_95 := self._tmp_95())
         ):
-            children.append(line)
+            children.append(_tmp_95)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
     def _loop0_12(self) -> Optional[Any]:
-        # _loop0_12: (auto_generated_0__tmp_107)
+        # _loop0_12: comma_token display_item
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_107 := self.auto_generated_0__tmp_107())
+            (self.comma_token())
+            and
+            (elem := self.display_item())
         ):
-            children.append(auto_generated_0__tmp_107)
+            children.append(elem)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_13(self) -> Optional[Any]:
-        # _loop0_13: (!(''))
+    def _gather_11(self) -> Optional[Any]:
+        # _gather_11: display_item _loop0_12
         mark = self._mark()
-        children = []
-        while (
-            (self.negative_lookahead(self.expect, ''))
+        if (
+            (elem := self.display_item())
+            is not None
+            and
+            (seq := self._loop0_12())
+            is not None
         ):
-            children.append([])
-            mark = self._mark()
+            return [elem] + seq;
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
     def _loop0_14(self) -> Optional[Any]:
-        # _loop0_14: (!(''))
+        # _loop0_14: comma_token dict_display_item
         mark = self._mark()
         children = []
         while (
-            (self.negative_lookahead(self.expect, ''))
+            (self.comma_token())
+            and
+            (elem := self.dict_display_item())
         ):
-            children.append([])
+            children.append(elem)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_15(self) -> Optional[Any]:
-        # _loop0_15: (auto_generated_0__tmp_112)
+    def _gather_13(self) -> Optional[Any]:
+        # _gather_13: dict_display_item _loop0_14
         mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_112 := self.auto_generated_0__tmp_112())
+        if (
+            (elem := self.dict_display_item())
+            is not None
+            and
+            (seq := self._loop0_14())
+            is not None
         ):
-            children.append(auto_generated_0__tmp_112)
-            mark = self._mark()
+            return [elem] + seq;
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_16(self) -> Optional[Any]:
-        # _loop0_16: (decorator_or_spaces)
+    def _tmp_15(self) -> Optional[Any]:
+        # _tmp_15: comma_token.call_arg+ comma_token?
         mark = self._mark()
-        children = []
-        while (
-            (decorator_or_spaces := self.decorator_or_spaces())
+        if (
+            (_gather_96 := self._gather_96())
+            and
+            (opt := self.comma_token(),)
         ):
-            children.append(decorator_or_spaces)
-            mark = self._mark()
+            return [_gather_96, opt];
         self._reset(mark)
-        return children;
+        return None;
+
+    @memoize
+    def _tmp_16(self) -> Optional[Any]:
+        # _tmp_16: walrus_expression comp_for | call_args
+        mark = self._mark()
+        if (
+            (walrus_expression := self.walrus_expression())
+            and
+            (comp_for := self.comp_for())
+        ):
+            return [walrus_expression, comp_for];
+        self._reset(mark)
+        if (
+            (call_args := self.call_args())
+        ):
+            return call_args;
+        self._reset(mark)
+        return None;
 
     @memoize
     def _loop0_17(self) -> Optional[Any]:
-        # _loop0_17: (dot_token)
-        mark = self._mark()
-        children = []
-        while (
-            (dot_token := self.dot_token())
-        ):
-            children.append(dot_token)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_18(self) -> Optional[Any]:
-        # _loop0_18: (auto_generated_0__tmp_93 spaces_not_in_brackets)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_107 := self._tmp_107())
-        ):
-            children.append(_tmp_107)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_20(self) -> Optional[Any]:
-        # _loop0_20: (auto_generated_0__tmp_93) (spaces_not_in_brackets)
-        mark = self._mark()
-        children = []
-        while (
-            (self.auto_generated_0__tmp_93())
-            and
-            (elem := self.spaces_not_in_brackets())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_19(self) -> Optional[Any]:
-        # _gather_19: (spaces_not_in_brackets) _loop0_20
-        mark = self._mark()
-        if (
-            (elem := self.spaces_not_in_brackets())
-            is not None
-            and
-            (seq := self._loop0_20())
-            is not None
-        ):
-            return [elem] + seq;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _loop0_21(self) -> Optional[Any]:
-        # _loop0_21: (auto_generated_0__tmp_94)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_94 := self.auto_generated_0__tmp_94())
-        ):
-            children.append(auto_generated_0__tmp_94)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_22(self) -> Optional[Any]:
-        # _loop0_22: (comma_token sub_item)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_108 := self._tmp_108())
-        ):
-            children.append(_tmp_108)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_24(self) -> Optional[Any]:
-        # _loop0_24: (comma_token) (sub_item)
-        mark = self._mark()
-        children = []
-        while (
-            (self.comma_token())
-            and
-            (elem := self.sub_item())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_23(self) -> Optional[Any]:
-        # _gather_23: (sub_item) _loop0_24
-        mark = self._mark()
-        if (
-            (elem := self.sub_item())
-            is not None
-            and
-            (seq := self._loop0_24())
-            is not None
-        ):
-            return [elem] + seq;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _loop0_25(self) -> Optional[Any]:
-        # _loop0_25: (auto_generated_0__tmp_95)
-        mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_95 := self.auto_generated_0__tmp_95())
-        ):
-            children.append(auto_generated_0__tmp_95)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_26(self) -> Optional[Any]:
-        # _loop0_26: (comma_token display_item)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_109 := self._tmp_109())
-        ):
-            children.append(_tmp_109)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_28(self) -> Optional[Any]:
-        # _loop0_28: (comma_token) (display_item)
-        mark = self._mark()
-        children = []
-        while (
-            (self.comma_token())
-            and
-            (elem := self.display_item())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_27(self) -> Optional[Any]:
-        # _gather_27: (display_item) _loop0_28
-        mark = self._mark()
-        if (
-            (elem := self.display_item())
-            is not None
-            and
-            (seq := self._loop0_28())
-            is not None
-        ):
-            return [elem] + seq;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _loop0_29(self) -> Optional[Any]:
-        # _loop0_29: (comma_token dict_display_item)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_110 := self._tmp_110())
-        ):
-            children.append(_tmp_110)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_31(self) -> Optional[Any]:
-        # _loop0_31: (comma_token) (dict_display_item)
-        mark = self._mark()
-        children = []
-        while (
-            (self.comma_token())
-            and
-            (elem := self.dict_display_item())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_30(self) -> Optional[Any]:
-        # _gather_30: (dict_display_item) _loop0_31
-        mark = self._mark()
-        if (
-            (elem := self.dict_display_item())
-            is not None
-            and
-            (seq := self._loop0_31())
-            is not None
-        ):
-            return [elem] + seq;
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _loop0_32(self) -> Optional[Any]:
-        # _loop0_32: (suffix)
+        # _loop0_17: suffix
         mark = self._mark()
         children = []
         while (
@@ -5914,138 +4120,155 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_33(self) -> Optional[Any]:
-        # _loop0_33: (auto_generated_0__tmp_98)
+    def _tmp_18(self) -> Optional[Any]:
+        # _tmp_18: starstar_token u_expr
+        mark = self._mark()
+        if (
+            (starstar_token := self.starstar_token())
+            and
+            (u_expr := self.u_expr())
+        ):
+            return [starstar_token, u_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_19(self) -> Optional[Any]:
+        # _loop0_19: (m_token u_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_98 := self.auto_generated_0__tmp_98())
+            (_tmp_98 := self._tmp_98())
         ):
-            children.append(auto_generated_0__tmp_98)
+            children.append(_tmp_98)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_34(self) -> Optional[Any]:
-        # _loop0_34: (auto_generated_0__tmp_99)
+    def _loop0_20(self) -> Optional[Any]:
+        # _loop0_20: (a_token m_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_99 := self.auto_generated_0__tmp_99())
+            (_tmp_99 := self._tmp_99())
         ):
-            children.append(auto_generated_0__tmp_99)
+            children.append(_tmp_99)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_35(self) -> Optional[Any]:
-        # _loop0_35: (auto_generated_0__tmp_100)
+    def _loop0_21(self) -> Optional[Any]:
+        # _loop0_21: (shift_token a_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_100 := self.auto_generated_0__tmp_100())
+            (_tmp_100 := self._tmp_100())
         ):
-            children.append(auto_generated_0__tmp_100)
+            children.append(_tmp_100)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_36(self) -> Optional[Any]:
-        # _loop0_36: (auto_generated_0__tmp_101)
+    def _loop0_22(self) -> Optional[Any]:
+        # _loop0_22: (bit_and_token shift_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_101 := self.auto_generated_0__tmp_101())
+            (_tmp_101 := self._tmp_101())
         ):
-            children.append(auto_generated_0__tmp_101)
+            children.append(_tmp_101)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_37(self) -> Optional[Any]:
-        # _loop0_37: (auto_generated_0__tmp_102)
+    def _loop0_23(self) -> Optional[Any]:
+        # _loop0_23: (bit_xor_token and_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_102 := self.auto_generated_0__tmp_102())
+            (_tmp_102 := self._tmp_102())
         ):
-            children.append(auto_generated_0__tmp_102)
+            children.append(_tmp_102)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_38(self) -> Optional[Any]:
-        # _loop0_38: (auto_generated_0__tmp_103)
+    def _loop0_24(self) -> Optional[Any]:
+        # _loop0_24: (bit_or_token xor_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_103 := self.auto_generated_0__tmp_103())
+            (_tmp_103 := self._tmp_103())
         ):
-            children.append(auto_generated_0__tmp_103)
+            children.append(_tmp_103)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_39(self) -> Optional[Any]:
-        # _loop0_39: (auto_generated_0__tmp_104)
+    def _loop0_25(self) -> Optional[Any]:
+        # _loop0_25: (comp_operator ready_to_be_starred_expr)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_104 := self.auto_generated_0__tmp_104())
+            (_tmp_104 := self._tmp_104())
         ):
-            children.append(auto_generated_0__tmp_104)
+            children.append(_tmp_104)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_40(self) -> Optional[Any]:
-        # _loop0_40: (auto_generated_0__tmp_105)
+    def _loop0_26(self) -> Optional[Any]:
+        # _loop0_26: (and_token not_test)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_105 := self.auto_generated_0__tmp_105())
+            (_tmp_105 := self._tmp_105())
         ):
-            children.append(auto_generated_0__tmp_105)
+            children.append(_tmp_105)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_41(self) -> Optional[Any]:
-        # _loop0_41: (auto_generated_0__tmp_106)
+    def _loop0_27(self) -> Optional[Any]:
+        # _loop0_27: (or_token and_test)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_106 := self.auto_generated_0__tmp_106())
+            (_tmp_106 := self._tmp_106())
         ):
-            children.append(auto_generated_0__tmp_106)
+            children.append(_tmp_106)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_42(self) -> Optional[Any]:
-        # _loop0_42: (comma_token tupled_expression_item)
+    def _tmp_28(self) -> Optional[Any]:
+        # _tmp_28: if_token ready_to_if_expr else_token expression
         mark = self._mark()
-        children = []
-        while (
-            (_tmp_111 := self._tmp_111())
+        if (
+            (if_token := self.if_token())
+            and
+            (ready_to_if_expr := self.ready_to_if_expr())
+            and
+            (else_token := self.else_token())
+            and
+            (expression := self.expression())
         ):
-            children.append(_tmp_111)
-            mark = self._mark()
+            return [if_token, ready_to_if_expr, else_token, expression];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_44(self) -> Optional[Any]:
-        # _loop0_44: (comma_token) (tupled_expression_item)
+    def _loop0_30(self) -> Optional[Any]:
+        # _loop0_30: comma_token tupled_expression_item
         mark = self._mark()
         children = []
         while (
@@ -6059,14 +4282,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_43(self) -> Optional[Any]:
-        # _gather_43: (tupled_expression_item) _loop0_44
+    def _gather_29(self) -> Optional[Any]:
+        # _gather_29: tupled_expression_item _loop0_30
         mark = self._mark()
         if (
             (elem := self.tupled_expression_item())
             is not None
             and
-            (seq := self._loop0_44())
+            (seq := self._loop0_30())
             is not None
         ):
             return [elem] + seq;
@@ -6074,21 +4297,21 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_45(self) -> Optional[Any]:
-        # _loop0_45: (semicolon_token simple_stmt)
+    def _tmp_31(self) -> Optional[Any]:
+        # _tmp_31: set_name walrus_token
         mark = self._mark()
-        children = []
-        while (
-            (_tmp_112 := self._tmp_112())
+        if (
+            (set_name := self.set_name())
+            and
+            (walrus_token := self.walrus_token())
         ):
-            children.append(_tmp_112)
-            mark = self._mark()
+            return [set_name, walrus_token];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_47(self) -> Optional[Any]:
-        # _loop0_47: (semicolon_token) (simple_stmt)
+    def _loop0_33(self) -> Optional[Any]:
+        # _loop0_33: (semicolon_token) simple_stmt
         mark = self._mark()
         children = []
         while (
@@ -6102,14 +4325,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_46(self) -> Optional[Any]:
-        # _gather_46: (simple_stmt) _loop0_47
+    def _gather_32(self) -> Optional[Any]:
+        # _gather_32: simple_stmt _loop0_33
         mark = self._mark()
         if (
             (elem := self.simple_stmt())
             is not None
             and
-            (seq := self._loop0_47())
+            (seq := self._loop0_33())
             is not None
         ):
             return [elem] + seq;
@@ -6117,8 +4340,8 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_48(self) -> Optional[Any]:
-        # _loop0_48: (line)
+    def _loop1_34(self) -> Optional[Any]:
+        # _loop1_34: line
         mark = self._mark()
         children = []
         while (
@@ -6130,8 +4353,8 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_49(self) -> Optional[Any]:
-        # _loop0_49: (line)
+    def _loop0_35(self) -> Optional[Any]:
+        # _loop0_35: line
         mark = self._mark()
         children = []
         while (
@@ -6143,21 +4366,102 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_50(self) -> Optional[Any]:
-        # _loop0_50: (auto_generated_0__tmp_107)
+    def _loop0_36(self) -> Optional[Any]:
+        # _loop0_36: (indent elif_token walrus_expression colon_and_body)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_107 := self.auto_generated_0__tmp_107())
+            (_tmp_107 := self._tmp_107())
         ):
-            children.append(auto_generated_0__tmp_107)
+            children.append(_tmp_107)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_51(self) -> Optional[Any]:
-        # _loop0_51: (except_colon)
+    def _tmp_37(self) -> Optional[Any]:
+        # _tmp_37: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_38(self) -> Optional[Any]:
+        # _tmp_38: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_39(self) -> Optional[Any]:
+        # _tmp_39: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_40(self) -> Optional[Any]:
+        # _tmp_40: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_41(self) -> Optional[Any]:
+        # _tmp_41: try_group | try_except | try_finally
+        mark = self._mark()
+        if (
+            (try_group := self.try_group())
+        ):
+            return try_group;
+        self._reset(mark)
+        if (
+            (try_except := self.try_except())
+        ):
+            return try_except;
+        self._reset(mark)
+        if (
+            (try_finally := self.try_finally())
+        ):
+            return try_finally;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop1_42(self) -> Optional[Any]:
+        # _loop1_42: except_colon
         mark = self._mark()
         children = []
         while (
@@ -6169,8 +4473,38 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_52(self) -> Optional[Any]:
-        # _loop0_52: (except_star)
+    def _tmp_43(self) -> Optional[Any]:
+        # _tmp_43: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_44(self) -> Optional[Any]:
+        # _tmp_44: indent finally_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (finally_token := self.finally_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, finally_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop1_45(self) -> Optional[Any]:
+        # _loop1_45: except_star
         mark = self._mark()
         children = []
         while (
@@ -6182,8 +4516,38 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_53(self) -> Optional[Any]:
-        # _loop0_53: (!(''))
+    def _tmp_46(self) -> Optional[Any]:
+        # _tmp_46: indent else_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (else_token := self.else_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, else_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_47(self) -> Optional[Any]:
+        # _tmp_47: indent finally_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (finally_token := self.finally_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, finally_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_48(self) -> Optional[Any]:
+        # _loop0_48: (!'')
         mark = self._mark()
         children = []
         while (
@@ -6193,42 +4557,70 @@ class GeneratedParser(Parser):
             mark = self._mark()
         self._reset(mark)
         return children;
+
+    @memoize
+    def _loop0_49(self) -> Optional[Any]:
+        # _loop0_49: (!'')
+        mark = self._mark()
+        children = []
+        while (
+            (self.negative_lookahead(self.expect, ''))
+        ):
+            children.append([])
+            mark = self._mark()
+        self._reset(mark)
+        return children;
+
+    @memoize
+    def _tmp_50(self) -> Optional[Any]:
+        # _tmp_50: indent finally_token colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (finally_token := self.finally_token())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, finally_token, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_51(self) -> Optional[Any]:
+        # _tmp_51: expression [as_token identifier]
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+            and
+            (opt := self._tmp_108(),)
+        ):
+            return [expression, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_52(self) -> Optional[Any]:
+        # _tmp_52: expression [as_token identifier]
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+            and
+            (opt := self._tmp_109(),)
+        ):
+            return [expression, opt];
+        self._reset(mark)
+        return None;
 
     @memoize
     def _loop0_54(self) -> Optional[Any]:
-        # _loop0_54: (!(''))
-        mark = self._mark()
-        children = []
-        while (
-            (self.negative_lookahead(self.expect, ''))
-        ):
-            children.append([])
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_55(self) -> Optional[Any]:
-        # _loop0_55: (comma_token auto_generated_0__tmp_110)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_113 := self._tmp_113())
-        ):
-            children.append(_tmp_113)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_57(self) -> Optional[Any]:
-        # _loop0_57: (comma_token) (auto_generated_0__tmp_110)
+        # _loop0_54: comma_token (expression [as_token set_array_target])
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.auto_generated_0__tmp_110())
+            (elem := self._tmp_110())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6236,14 +4628,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_56(self) -> Optional[Any]:
-        # _gather_56: (auto_generated_0__tmp_110) _loop0_57
+    def _gather_53(self) -> Optional[Any]:
+        # _gather_53: (expression [as_token set_array_target]) _loop0_54
         mark = self._mark()
         if (
-            (elem := self.auto_generated_0__tmp_110())
+            (elem := self._tmp_110())
             is not None
             and
-            (seq := self._loop0_57())
+            (seq := self._loop0_54())
             is not None
         ):
             return [elem] + seq;
@@ -6251,27 +4643,14 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_58(self) -> Optional[Any]:
-        # _loop0_58: (comma_token auto_generated_0__tmp_111)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_114 := self._tmp_114())
-        ):
-            children.append(_tmp_114)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_60(self) -> Optional[Any]:
-        # _loop0_60: (comma_token) (auto_generated_0__tmp_111)
+    def _loop0_56(self) -> Optional[Any]:
+        # _loop0_56: comma_token (expression [as_token set_array_target])
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.auto_generated_0__tmp_111())
+            (elem := self._tmp_111())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6279,14 +4658,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_59(self) -> Optional[Any]:
-        # _gather_59: (auto_generated_0__tmp_111) _loop0_60
+    def _gather_55(self) -> Optional[Any]:
+        # _gather_55: (expression [as_token set_array_target]) _loop0_56
         mark = self._mark()
         if (
-            (elem := self.auto_generated_0__tmp_111())
+            (elem := self._tmp_111())
             is not None
             and
-            (seq := self._loop0_60())
+            (seq := self._loop0_56())
             is not None
         ):
             return [elem] + seq;
@@ -6294,34 +4673,62 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_61(self) -> Optional[Any]:
-        # _loop0_61: (auto_generated_0__tmp_112)
+    def _tmp_57(self) -> Optional[Any]:
+        # _tmp_57: left_paren_token call_args right_paren_token
+        mark = self._mark()
+        if (
+            (left_paren_token := self.left_paren_token())
+            and
+            (call_args := self.call_args())
+            and
+            (right_paren_token := self.right_paren_token())
+        ):
+            return [left_paren_token, call_args, right_paren_token];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_58(self) -> Optional[Any]:
+        # _tmp_58: assign_token expression
+        mark = self._mark()
+        if (
+            (assign_token := self.assign_token())
+            and
+            (expression := self.expression())
+        ):
+            return [assign_token, expression];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_59(self) -> Optional[Any]:
+        # _loop0_59: (comma_token defparameter)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_112 := self.auto_generated_0__tmp_112())
+            (_tmp_112 := self._tmp_112())
         ):
-            children.append(auto_generated_0__tmp_112)
+            children.append(_tmp_112)
             mark = self._mark()
         self._reset(mark)
         return children;
+
+    @memoize
+    def _tmp_60(self) -> Optional[Any]:
+        # _tmp_60: comma_token parameter_starstar?
+        mark = self._mark()
+        if (
+            (comma_token := self.comma_token())
+            and
+            (opt := self.parameter_starstar(),)
+        ):
+            return [comma_token, opt];
+        self._reset(mark)
+        return None;
 
     @memoize
     def _loop0_62(self) -> Optional[Any]:
-        # _loop0_62: (comma_token defparameter)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_115 := self._tmp_115())
-        ):
-            children.append(_tmp_115)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_64(self) -> Optional[Any]:
-        # _loop0_64: (comma_token) (defparameter)
+        # _loop0_62: comma_token defparameter
         mark = self._mark()
         children = []
         while (
@@ -6335,36 +4742,36 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_63(self) -> Optional[Any]:
-        # _gather_63: (defparameter) _loop0_64
+    def _gather_61(self) -> Optional[Any]:
+        # _gather_61: defparameter _loop0_62
         mark = self._mark()
         if (
             (elem := self.defparameter())
             is not None
             and
-            (seq := self._loop0_64())
+            (seq := self._loop0_62())
             is not None
         ):
             return [elem] + seq;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_63(self) -> Optional[Any]:
+        # _tmp_63: comma_token parameter_list_starargs?
+        mark = self._mark()
+        if (
+            (comma_token := self.comma_token())
+            and
+            (opt := self.parameter_list_starargs(),)
+        ):
+            return [comma_token, opt];
         self._reset(mark)
         return None;
 
     @memoize
     def _loop0_65(self) -> Optional[Any]:
-        # _loop0_65: (comma_token defparameter)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_116 := self._tmp_116())
-        ):
-            children.append(_tmp_116)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_67(self) -> Optional[Any]:
-        # _loop0_67: (comma_token) (defparameter)
+        # _loop0_65: comma_token defparameter
         mark = self._mark()
         children = []
         while (
@@ -6378,14 +4785,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_66(self) -> Optional[Any]:
-        # _gather_66: (defparameter) _loop0_67
+    def _gather_64(self) -> Optional[Any]:
+        # _gather_64: defparameter _loop0_65
         mark = self._mark()
         if (
             (elem := self.defparameter())
             is not None
             and
-            (seq := self._loop0_67())
+            (seq := self._loop0_65())
             is not None
         ):
             return [elem] + seq;
@@ -6393,8 +4800,21 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_68(self) -> Optional[Any]:
-        # _loop0_68: (decorator_or_spaces)
+    def _tmp_66(self) -> Optional[Any]:
+        # _tmp_66: comma_token parameter_list_no_posonly?
+        mark = self._mark()
+        if (
+            (comma_token := self.comma_token())
+            and
+            (opt := self.parameter_list_no_posonly(),)
+        ):
+            return [comma_token, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_67(self) -> Optional[Any]:
+        # _loop0_67: decorator_or_spaces
         mark = self._mark()
         children = []
         while (
@@ -6406,21 +4826,21 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_69(self) -> Optional[Any]:
-        # _loop0_69: (comma_token set_array_target)
+    def _tmp_68(self) -> Optional[Any]:
+        # _tmp_68: returns_token expression
         mark = self._mark()
-        children = []
-        while (
-            (_tmp_117 := self._tmp_117())
+        if (
+            (returns_token := self.returns_token())
+            and
+            (expression := self.expression())
         ):
-            children.append(_tmp_117)
-            mark = self._mark()
+            return [returns_token, expression];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_71(self) -> Optional[Any]:
-        # _loop0_71: (comma_token) (set_array_target)
+    def _loop0_70(self) -> Optional[Any]:
+        # _loop0_70: comma_token set_array_target
         mark = self._mark()
         children = []
         while (
@@ -6434,14 +4854,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_70(self) -> Optional[Any]:
-        # _gather_70: (set_array_target) _loop0_71
+    def _gather_69(self) -> Optional[Any]:
+        # _gather_69: set_array_target _loop0_70
         mark = self._mark()
         if (
             (elem := self.set_array_target())
             is not None
             and
-            (seq := self._loop0_71())
+            (seq := self._loop0_70())
             is not None
         ):
             return [elem] + seq;
@@ -6450,20 +4870,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_72(self) -> Optional[Any]:
-        # _loop0_72: (comma_token del_array_target)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_118 := self._tmp_118())
-        ):
-            children.append(_tmp_118)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_74(self) -> Optional[Any]:
-        # _loop0_74: (comma_token) (del_array_target)
+        # _loop0_72: comma_token del_array_target
         mark = self._mark()
         children = []
         while (
@@ -6477,14 +4884,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_73(self) -> Optional[Any]:
-        # _gather_73: (del_array_target) _loop0_74
+    def _gather_71(self) -> Optional[Any]:
+        # _gather_71: del_array_target _loop0_72
         mark = self._mark()
         if (
             (elem := self.del_array_target())
             is not None
             and
-            (seq := self._loop0_74())
+            (seq := self._loop0_72())
             is not None
         ):
             return [elem] + seq;
@@ -6492,34 +4899,60 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_75(self) -> Optional[Any]:
-        # _loop0_75: (auto_generated_0__tmp_113)
+    def _loop1_73(self) -> Optional[Any]:
+        # _loop1_73: (set_multiple_targets assign_token)
         mark = self._mark()
         children = []
         while (
-            (auto_generated_0__tmp_113 := self.auto_generated_0__tmp_113())
+            (_tmp_113 := self._tmp_113())
         ):
-            children.append(auto_generated_0__tmp_113)
+            children.append(_tmp_113)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
-    def _loop0_76(self) -> Optional[Any]:
-        # _loop0_76: (dot_token)
+    def _tmp_74(self) -> Optional[Any]:
+        # _tmp_74: assign_token yield_expression
         mark = self._mark()
-        children = []
-        while (
-            (dot_token := self.dot_token())
+        if (
+            (assign_token := self.assign_token())
+            and
+            (yield_expression := self.yield_expression())
         ):
-            children.append(dot_token)
-            mark = self._mark()
+            return [assign_token, yield_expression];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_77(self) -> Optional[Any]:
-        # _loop0_77: (dot_token)
+    def _tmp_75(self) -> Optional[Any]:
+        # _tmp_75: comma_token expression
+        mark = self._mark()
+        if (
+            (comma_token := self.comma_token())
+            and
+            (expression := self.expression())
+        ):
+            return [comma_token, expression];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_76(self) -> Optional[Any]:
+        # _tmp_76: expression [from_token expression]
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+            and
+            (opt := self._tmp_114(),)
+        ):
+            return [expression, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop1_77(self) -> Optional[Any]:
+        # _loop1_77: dot_token
         mark = self._mark()
         children = []
         while (
@@ -6532,20 +4965,20 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_78(self) -> Optional[Any]:
-        # _loop0_78: (dot_token identifier)
+        # _loop0_78: dot_token
         mark = self._mark()
         children = []
         while (
-            (_tmp_119 := self._tmp_119())
+            (dot_token := self.dot_token())
         ):
-            children.append(_tmp_119)
+            children.append(dot_token)
             mark = self._mark()
         self._reset(mark)
         return children;
 
     @memoize
     def _loop0_80(self) -> Optional[Any]:
-        # _loop0_80: (dot_token) (identifier)
+        # _loop0_80: dot_token identifier
         mark = self._mark()
         children = []
         while (
@@ -6560,7 +4993,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def _gather_79(self) -> Optional[Any]:
-        # _gather_79: (identifier) _loop0_80
+        # _gather_79: identifier _loop0_80
         mark = self._mark()
         if (
             (elem := self.identifier())
@@ -6574,27 +5007,14 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_81(self) -> Optional[Any]:
-        # _loop0_81: (comma_token auto_generated_0__tmp_115)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_120 := self._tmp_120())
-        ):
-            children.append(_tmp_120)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_83(self) -> Optional[Any]:
-        # _loop0_83: (comma_token) (auto_generated_0__tmp_115)
+    def _loop0_82(self) -> Optional[Any]:
+        # _loop0_82: comma_token (dot_token.identifier+ [as_token identifier])
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.auto_generated_0__tmp_115())
+            (elem := self._tmp_115())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6602,14 +5022,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_82(self) -> Optional[Any]:
-        # _gather_82: (auto_generated_0__tmp_115) _loop0_83
+    def _gather_81(self) -> Optional[Any]:
+        # _gather_81: (dot_token.identifier+ [as_token identifier]) _loop0_82
         mark = self._mark()
         if (
-            (elem := self.auto_generated_0__tmp_115())
+            (elem := self._tmp_115())
             is not None
             and
-            (seq := self._loop0_83())
+            (seq := self._loop0_82())
             is not None
         ):
             return [elem] + seq;
@@ -6618,26 +5038,43 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_84(self) -> Optional[Any]:
-        # _loop0_84: (comma_token auto_generated_0__tmp_116)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_121 := self._tmp_121())
-        ):
-            children.append(_tmp_121)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_86(self) -> Optional[Any]:
-        # _loop0_86: (comma_token) (auto_generated_0__tmp_116)
+        # _loop0_84: comma_token (identifier [as_token identifier])
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.auto_generated_0__tmp_116())
+            (elem := self._tmp_116())
+        ):
+            children.append(elem)
+            mark = self._mark()
+        self._reset(mark)
+        return children;
+
+    @memoize
+    def _gather_83(self) -> Optional[Any]:
+        # _gather_83: (identifier [as_token identifier]) _loop0_84
+        mark = self._mark()
+        if (
+            (elem := self._tmp_116())
+            is not None
+            and
+            (seq := self._loop0_84())
+            is not None
+        ):
+            return [elem] + seq;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_86(self) -> Optional[Any]:
+        # _loop0_86: comma_token (identifier [as_token identifier])
+        mark = self._mark()
+        children = []
+        while (
+            (self.comma_token())
+            and
+            (elem := self._tmp_117())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6646,10 +5083,10 @@ class GeneratedParser(Parser):
 
     @memoize
     def _gather_85(self) -> Optional[Any]:
-        # _gather_85: (auto_generated_0__tmp_116) _loop0_86
+        # _gather_85: (identifier [as_token identifier]) _loop0_86
         mark = self._mark()
         if (
-            (elem := self.auto_generated_0__tmp_116())
+            (elem := self._tmp_117())
             is not None
             and
             (seq := self._loop0_86())
@@ -6660,27 +5097,14 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_87(self) -> Optional[Any]:
-        # _loop0_87: (comma_token auto_generated_0__tmp_117)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_122 := self._tmp_122())
-        ):
-            children.append(_tmp_122)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_89(self) -> Optional[Any]:
-        # _loop0_89: (comma_token) (auto_generated_0__tmp_117)
+    def _loop0_88(self) -> Optional[Any]:
+        # _loop0_88: comma_token identifier
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.auto_generated_0__tmp_117())
+            (elem := self.identifier())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6688,14 +5112,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_88(self) -> Optional[Any]:
-        # _gather_88: (auto_generated_0__tmp_117) _loop0_89
+    def _gather_87(self) -> Optional[Any]:
+        # _gather_87: identifier _loop0_88
         mark = self._mark()
         if (
-            (elem := self.auto_generated_0__tmp_117())
+            (elem := self.identifier())
             is not None
             and
-            (seq := self._loop0_89())
+            (seq := self._loop0_88())
             is not None
         ):
             return [elem] + seq;
@@ -6704,20 +5128,7 @@ class GeneratedParser(Parser):
 
     @memoize
     def _loop0_90(self) -> Optional[Any]:
-        # _loop0_90: (comma_token identifier)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_123 := self._tmp_123())
-        ):
-            children.append(_tmp_123)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_92(self) -> Optional[Any]:
-        # _loop0_92: (comma_token) (identifier)
+        # _loop0_90: comma_token identifier
         mark = self._mark()
         children = []
         while (
@@ -6731,11 +5142,41 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_91(self) -> Optional[Any]:
-        # _gather_91: (identifier) _loop0_92
+    def _gather_89(self) -> Optional[Any]:
+        # _gather_89: identifier _loop0_90
         mark = self._mark()
         if (
             (elem := self.identifier())
+            is not None
+            and
+            (seq := self._loop0_90())
+            is not None
+        ):
+            return [elem] + seq;
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_92(self) -> Optional[Any]:
+        # _loop0_92: comma_token type_param
+        mark = self._mark()
+        children = []
+        while (
+            (self.comma_token())
+            and
+            (elem := self.type_param())
+        ):
+            children.append(elem)
+            mark = self._mark()
+        self._reset(mark)
+        return children;
+
+    @memoize
+    def _gather_91(self) -> Optional[Any]:
+        # _gather_91: type_param _loop0_92
+        mark = self._mark()
+        if (
+            (elem := self.type_param())
             is not None
             and
             (seq := self._loop0_92())
@@ -6746,27 +5187,61 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_93(self) -> Optional[Any]:
-        # _loop0_93: (comma_token identifier)
+    def _tmp_93(self) -> Optional[Any]:
+        # _tmp_93: !r'$' new_line
         mark = self._mark()
-        children = []
-        while (
-            (_tmp_124 := self._tmp_124())
+        if (
+            (self.negative_lookahead(self.expect, r'$'))
+            and
+            (new_line := self.new_line())
         ):
-            children.append(_tmp_124)
-            mark = self._mark()
+            return new_line;
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_95(self) -> Optional[Any]:
-        # _loop0_95: (comma_token) (identifier)
+    def _tmp_94(self) -> Optional[Any]:
+        # _tmp_94: str_with_prefix spaces
+        mark = self._mark()
+        if (
+            (str_with_prefix := self.str_with_prefix())
+            and
+            (spaces := self.spaces())
+        ):
+            return [str_with_prefix, spaces];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_95(self) -> Optional[Any]:
+        # _tmp_95: async_token? for_token set_multiple_targets in_token ready_to_if_expr ((if_token ready_to_if_expr))*
+        mark = self._mark()
+        if (
+            (opt := self.async_token(),)
+            and
+            (for_token := self.for_token())
+            and
+            (set_multiple_targets := self.set_multiple_targets())
+            and
+            (in_token := self.in_token())
+            and
+            (ready_to_if_expr := self.ready_to_if_expr())
+            and
+            (_loop0_118 := self._loop0_118(),)
+        ):
+            return [opt, for_token, set_multiple_targets, in_token, ready_to_if_expr, _loop0_118];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_97(self) -> Optional[Any]:
+        # _loop0_97: comma_token call_arg
         mark = self._mark()
         children = []
         while (
             (self.comma_token())
             and
-            (elem := self.identifier())
+            (elem := self.call_arg())
         ):
             children.append(elem)
             mark = self._mark()
@@ -6774,14 +5249,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_94(self) -> Optional[Any]:
-        # _gather_94: (identifier) _loop0_95
+    def _gather_96(self) -> Optional[Any]:
+        # _gather_96: call_arg _loop0_97
         mark = self._mark()
         if (
-            (elem := self.identifier())
+            (elem := self.call_arg())
             is not None
             and
-            (seq := self._loop0_95())
+            (seq := self._loop0_97())
             is not None
         ):
             return [elem] + seq;
@@ -6789,64 +5264,272 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _loop0_96(self) -> Optional[Any]:
-        # _loop0_96: (comma_token type_param)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_125 := self._tmp_125())
-        ):
-            children.append(_tmp_125)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_98(self) -> Optional[Any]:
-        # _loop0_98: (comma_token) (type_param)
-        mark = self._mark()
-        children = []
-        while (
-            (self.comma_token())
-            and
-            (elem := self.type_param())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_97(self) -> Optional[Any]:
-        # _gather_97: (type_param) _loop0_98
+    def _tmp_98(self) -> Optional[Any]:
+        # _tmp_98: m_token u_expr
         mark = self._mark()
         if (
-            (elem := self.type_param())
-            is not None
+            (m_token := self.m_token())
             and
-            (seq := self._loop0_98())
-            is not None
+            (u_expr := self.u_expr())
         ):
-            return [elem] + seq;
+            return [m_token, u_expr];
         self._reset(mark)
         return None;
 
     @memoize
-    def _loop0_99(self) -> Optional[Any]:
-        # _loop0_99: (auto_generated_0__tmp_126)
+    def _tmp_99(self) -> Optional[Any]:
+        # _tmp_99: a_token m_expr
         mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_126 := self.auto_generated_0__tmp_126())
+        if (
+            (a_token := self.a_token())
+            and
+            (m_expr := self.m_expr())
         ):
-            children.append(auto_generated_0__tmp_126)
-            mark = self._mark()
+            return [a_token, m_expr];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_100(self) -> Optional[Any]:
-        # _loop0_100: (comma_token call_arg)
+    def _tmp_100(self) -> Optional[Any]:
+        # _tmp_100: shift_token a_expr
+        mark = self._mark()
+        if (
+            (shift_token := self.shift_token())
+            and
+            (a_expr := self.a_expr())
+        ):
+            return [shift_token, a_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_101(self) -> Optional[Any]:
+        # _tmp_101: bit_and_token shift_expr
+        mark = self._mark()
+        if (
+            (bit_and_token := self.bit_and_token())
+            and
+            (shift_expr := self.shift_expr())
+        ):
+            return [bit_and_token, shift_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_102(self) -> Optional[Any]:
+        # _tmp_102: bit_xor_token and_expr
+        mark = self._mark()
+        if (
+            (bit_xor_token := self.bit_xor_token())
+            and
+            (and_expr := self.and_expr())
+        ):
+            return [bit_xor_token, and_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_103(self) -> Optional[Any]:
+        # _tmp_103: bit_or_token xor_expr
+        mark = self._mark()
+        if (
+            (bit_or_token := self.bit_or_token())
+            and
+            (xor_expr := self.xor_expr())
+        ):
+            return [bit_or_token, xor_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_104(self) -> Optional[Any]:
+        # _tmp_104: comp_operator ready_to_be_starred_expr
+        mark = self._mark()
+        if (
+            (comp_operator := self.comp_operator())
+            and
+            (ready_to_be_starred_expr := self.ready_to_be_starred_expr())
+        ):
+            return [comp_operator, ready_to_be_starred_expr];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_105(self) -> Optional[Any]:
+        # _tmp_105: and_token not_test
+        mark = self._mark()
+        if (
+            (and_token := self.and_token())
+            and
+            (not_test := self.not_test())
+        ):
+            return [and_token, not_test];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_106(self) -> Optional[Any]:
+        # _tmp_106: or_token and_test
+        mark = self._mark()
+        if (
+            (or_token := self.or_token())
+            and
+            (and_test := self.and_test())
+        ):
+            return [or_token, and_test];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_107(self) -> Optional[Any]:
+        # _tmp_107: indent elif_token walrus_expression colon_and_body
+        mark = self._mark()
+        if (
+            (indent := self.indent())
+            and
+            (elif_token := self.elif_token())
+            and
+            (walrus_expression := self.walrus_expression())
+            and
+            (colon_and_body := self.colon_and_body())
+        ):
+            return [indent, elif_token, walrus_expression, colon_and_body];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_108(self) -> Optional[Any]:
+        # _tmp_108: as_token identifier
+        mark = self._mark()
+        if (
+            (as_token := self.as_token())
+            and
+            (identifier := self.identifier())
+        ):
+            return [as_token, identifier];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_109(self) -> Optional[Any]:
+        # _tmp_109: as_token identifier
+        mark = self._mark()
+        if (
+            (as_token := self.as_token())
+            and
+            (identifier := self.identifier())
+        ):
+            return [as_token, identifier];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_110(self) -> Optional[Any]:
+        # _tmp_110: expression [as_token set_array_target]
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+            and
+            (opt := self._tmp_119(),)
+        ):
+            return [expression, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_111(self) -> Optional[Any]:
+        # _tmp_111: expression [as_token set_array_target]
+        mark = self._mark()
+        if (
+            (expression := self.expression())
+            and
+            (opt := self._tmp_120(),)
+        ):
+            return [expression, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_112(self) -> Optional[Any]:
+        # _tmp_112: comma_token defparameter
+        mark = self._mark()
+        if (
+            (comma_token := self.comma_token())
+            and
+            (defparameter := self.defparameter())
+        ):
+            return [comma_token, defparameter];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_113(self) -> Optional[Any]:
+        # _tmp_113: set_multiple_targets assign_token
+        mark = self._mark()
+        if (
+            (set_multiple_targets := self.set_multiple_targets())
+            and
+            (assign_token := self.assign_token())
+        ):
+            return [set_multiple_targets, assign_token];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_114(self) -> Optional[Any]:
+        # _tmp_114: from_token expression
+        mark = self._mark()
+        if (
+            (from_token := self.from_token())
+            and
+            (expression := self.expression())
+        ):
+            return [from_token, expression];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_115(self) -> Optional[Any]:
+        # _tmp_115: dot_token.identifier+ [as_token identifier]
+        mark = self._mark()
+        if (
+            (_gather_121 := self._gather_121())
+            and
+            (opt := self._tmp_123(),)
+        ):
+            return [_gather_121, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_116(self) -> Optional[Any]:
+        # _tmp_116: identifier [as_token identifier]
+        mark = self._mark()
+        if (
+            (identifier := self.identifier())
+            and
+            (opt := self._tmp_124(),)
+        ):
+            return [identifier, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _tmp_117(self) -> Optional[Any]:
+        # _tmp_117: identifier [as_token identifier]
+        mark = self._mark()
+        if (
+            (identifier := self.identifier())
+            and
+            (opt := self._tmp_125(),)
+        ):
+            return [identifier, opt];
+        self._reset(mark)
+        return None;
+
+    @memoize
+    def _loop0_118(self) -> Optional[Any]:
+        # _loop0_118: (if_token ready_to_if_expr)
         mark = self._mark()
         children = []
         while (
@@ -6858,64 +5541,34 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _loop0_102(self) -> Optional[Any]:
-        # _loop0_102: (comma_token) (call_arg)
-        mark = self._mark()
-        children = []
-        while (
-            (self.comma_token())
-            and
-            (elem := self.call_arg())
-        ):
-            children.append(elem)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _gather_101(self) -> Optional[Any]:
-        # _gather_101: (call_arg) _loop0_102
+    def _tmp_119(self) -> Optional[Any]:
+        # _tmp_119: as_token set_array_target
         mark = self._mark()
         if (
-            (elem := self.call_arg())
-            is not None
+            (as_token := self.as_token())
             and
-            (seq := self._loop0_102())
-            is not None
+            (set_array_target := self.set_array_target())
         ):
-            return [elem] + seq;
+            return [as_token, set_array_target];
         self._reset(mark)
         return None;
 
     @memoize
-    def _loop0_103(self) -> Optional[Any]:
-        # _loop0_103: (auto_generated_0__tmp_126)
+    def _tmp_120(self) -> Optional[Any]:
+        # _tmp_120: as_token set_array_target
         mark = self._mark()
-        children = []
-        while (
-            (auto_generated_0__tmp_126 := self.auto_generated_0__tmp_126())
+        if (
+            (as_token := self.as_token())
+            and
+            (set_array_target := self.set_array_target())
         ):
-            children.append(auto_generated_0__tmp_126)
-            mark = self._mark()
+            return [as_token, set_array_target];
         self._reset(mark)
-        return children;
+        return None;
 
     @memoize
-    def _loop0_104(self) -> Optional[Any]:
-        # _loop0_104: (dot_token identifier)
-        mark = self._mark()
-        children = []
-        while (
-            (_tmp_127 := self._tmp_127())
-        ):
-            children.append(_tmp_127)
-            mark = self._mark()
-        self._reset(mark)
-        return children;
-
-    @memoize
-    def _loop0_106(self) -> Optional[Any]:
-        # _loop0_106: (dot_token) (identifier)
+    def _loop0_122(self) -> Optional[Any]:
+        # _loop0_122: dot_token identifier
         mark = self._mark()
         children = []
         while (
@@ -6929,14 +5582,14 @@ class GeneratedParser(Parser):
         return children;
 
     @memoize
-    def _gather_105(self) -> Optional[Any]:
-        # _gather_105: (identifier) _loop0_106
+    def _gather_121(self) -> Optional[Any]:
+        # _gather_121: identifier _loop0_122
         mark = self._mark()
         if (
             (elem := self.identifier())
             is not None
             and
-            (seq := self._loop0_106())
+            (seq := self._loop0_122())
             is not None
         ):
             return [elem] + seq;
@@ -6944,275 +5597,54 @@ class GeneratedParser(Parser):
         return None;
 
     @memoize
-    def _tmp_107(self) -> Optional[Any]:
-        # _tmp_107: auto_generated_0__tmp_93 spaces_not_in_brackets
-        mark = self._mark()
-        if (
-            (auto_generated_0__tmp_93 := self.auto_generated_0__tmp_93())
-            and
-            (elem := self.spaces_not_in_brackets())
-        ):
-            return [auto_generated_0__tmp_93, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_108(self) -> Optional[Any]:
-        # _tmp_108: comma_token sub_item
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.sub_item())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_109(self) -> Optional[Any]:
-        # _tmp_109: comma_token display_item
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.display_item())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_110(self) -> Optional[Any]:
-        # _tmp_110: comma_token dict_display_item
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.dict_display_item())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_111(self) -> Optional[Any]:
-        # _tmp_111: comma_token tupled_expression_item
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.tupled_expression_item())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_112(self) -> Optional[Any]:
-        # _tmp_112: semicolon_token simple_stmt
-        mark = self._mark()
-        if (
-            (semicolon_token := self.semicolon_token())
-            and
-            (elem := self.simple_stmt())
-        ):
-            return [semicolon_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_113(self) -> Optional[Any]:
-        # _tmp_113: comma_token auto_generated_0__tmp_110
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.auto_generated_0__tmp_110())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_114(self) -> Optional[Any]:
-        # _tmp_114: comma_token auto_generated_0__tmp_111
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.auto_generated_0__tmp_111())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_115(self) -> Optional[Any]:
-        # _tmp_115: comma_token defparameter
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.defparameter())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_116(self) -> Optional[Any]:
-        # _tmp_116: comma_token defparameter
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.defparameter())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_117(self) -> Optional[Any]:
-        # _tmp_117: comma_token set_array_target
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.set_array_target())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_118(self) -> Optional[Any]:
-        # _tmp_118: comma_token del_array_target
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.del_array_target())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_119(self) -> Optional[Any]:
-        # _tmp_119: dot_token identifier
-        mark = self._mark()
-        if (
-            (dot_token := self.dot_token())
-            and
-            (elem := self.identifier())
-        ):
-            return [dot_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_120(self) -> Optional[Any]:
-        # _tmp_120: comma_token auto_generated_0__tmp_115
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.auto_generated_0__tmp_115())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_121(self) -> Optional[Any]:
-        # _tmp_121: comma_token auto_generated_0__tmp_116
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.auto_generated_0__tmp_116())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_122(self) -> Optional[Any]:
-        # _tmp_122: comma_token auto_generated_0__tmp_117
-        mark = self._mark()
-        if (
-            (comma_token := self.comma_token())
-            and
-            (elem := self.auto_generated_0__tmp_117())
-        ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
     def _tmp_123(self) -> Optional[Any]:
-        # _tmp_123: comma_token identifier
+        # _tmp_123: as_token identifier
         mark = self._mark()
         if (
-            (comma_token := self.comma_token())
+            (as_token := self.as_token())
             and
-            (elem := self.identifier())
+            (identifier := self.identifier())
         ):
-            return [comma_token, elem];
+            return [as_token, identifier];
         self._reset(mark)
         return None;
 
     @memoize
     def _tmp_124(self) -> Optional[Any]:
-        # _tmp_124: comma_token identifier
+        # _tmp_124: as_token identifier
         mark = self._mark()
         if (
-            (comma_token := self.comma_token())
+            (as_token := self.as_token())
             and
-            (elem := self.identifier())
+            (identifier := self.identifier())
         ):
-            return [comma_token, elem];
+            return [as_token, identifier];
         self._reset(mark)
         return None;
 
     @memoize
     def _tmp_125(self) -> Optional[Any]:
-        # _tmp_125: comma_token type_param
+        # _tmp_125: as_token identifier
         mark = self._mark()
         if (
-            (comma_token := self.comma_token())
+            (as_token := self.as_token())
             and
-            (elem := self.type_param())
+            (identifier := self.identifier())
         ):
-            return [comma_token, elem];
+            return [as_token, identifier];
         self._reset(mark)
         return None;
 
     @memoize
     def _tmp_126(self) -> Optional[Any]:
-        # _tmp_126: comma_token call_arg
+        # _tmp_126: if_token ready_to_if_expr
         mark = self._mark()
         if (
-            (comma_token := self.comma_token())
+            (if_token := self.if_token())
             and
-            (elem := self.call_arg())
+            (ready_to_if_expr := self.ready_to_if_expr())
         ):
-            return [comma_token, elem];
-        self._reset(mark)
-        return None;
-
-    @memoize
-    def _tmp_127(self) -> Optional[Any]:
-        # _tmp_127: dot_token identifier
-        mark = self._mark()
-        if (
-            (dot_token := self.dot_token())
-            and
-            (elem := self.identifier())
-        ):
-            return [dot_token, elem];
+            return [if_token, ready_to_if_expr];
         self._reset(mark)
         return None;
 
