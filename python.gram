@@ -1,893 +1,1142 @@
-@subheader '''
-import char_parser
-'''
+@subheader 'import ast\nimport sys\nimport tokenize\nfrom typing import Any, Optional\nfrom pegen.parser import memoize, memoize_left_rec, logger, Parser\nimport char_parser'
 
-# spaces
+new_line: 
+    | token='(#[^\\n]*)?(\\n|$)' { (lambda token: token)(token) }
 
-new_line: token=r'(#[^\n]*)?(\n|$)' { token }
+spaces: 
+    | 'if_in_brackets\x00' a=spaces_in_brackets { (lambda a: a)(a) }
+    | spaces_not_in_brackets=spaces_not_in_brackets { (lambda spaces_not_in_brackets: spaces_not_in_brackets)(spaces_not_in_brackets) }
 
-spaces:
-    | 'if_in_brackets\0' a=spaces_in_brackets { a }
-    | spaces_not_in_brackets
+spaces_in_brackets: 
+    | tokens=auto_generated_0__gather_1 { (lambda tokens: tokens[0])(tokens) }
 
-spaces_in_brackets: tokens=(!r'$' new_line).spaces_not_in_brackets+ { tokens[0] }
+spaces_not_in_brackets: 
+    | token='([^\\S\\n]|\\\\\\n)*' { (lambda token: token)(token) }
 
-spaces_not_in_brackets: token=r'([^\S\n]|\\\n)*' { token }
+spaces_for_indent: 
+    | token='[^\\S\\n]*' { (lambda token: token)(token) }
 
-spaces_for_indent: token=r'[^\S\n]*' { token }
+m_token: 
+    | token='\\*|@|//|/|%' spaces { (lambda token: token)(token) }
 
-# tokens
+a_token: 
+    | token='\\+|-' spaces { (lambda token: token)(token) }
 
-m_token: token=r'\*|@|//|/|%' spaces { token }
+shift_token: 
+    | token='<<|>>' spaces { (lambda token: token)(token) }
 
-a_token: token=r'\+|-' spaces { token }
+bit_and_token: 
+    | token='&' spaces { (lambda token: token)(token) }
 
-shift_token: token=r'<<|>>' spaces { token }
+bit_xor_token: 
+    | token='\\^' spaces { (lambda token: token)(token) }
 
-bit_and_token: token=r'&' spaces { token }
+bit_or_token: 
+    | token='\\|' spaces { (lambda token: token)(token) }
 
-bit_xor_token: token=r'\^' spaces { token }
+comp_token: 
+    | token='>=|<=|<|>|==|!=' spaces { (lambda token: token)(token) }
 
-bit_or_token: token=r'\|' spaces { token }
+aug_token: 
+    | token='\\+=|-=|\\*=|@=|//=|/=|%=|\\*\\*=|>>=|<<=|&=|\\^=|\\|=' spaces { (lambda token: token)(token) }
 
-comp_token: token=r'>=|<=|<|>|==|!=' spaces { token }
+u_token: 
+    | token='-|\\+|~' spaces { (lambda token: token)(token) }
 
-aug_token: token=r'\+=|-=|\*=|@=|//=|/=|%=|\*\*=|>>=|<<=|&=|\^=|\|=' spaces { token }
+colon_token: 
+    | token=':' spaces { (lambda token: token)(token) }
 
-u_token: token=r'-|\+|~' spaces { token }
+walrus_token: 
+    | token=':=' spaces { (lambda token: token)(token) }
 
-colon_token: token=r':' spaces { token }
+semicolon_token: 
+    | token=';' spaces { (lambda token: token)(token) }
 
-walrus_token: token=r':=' spaces { token }
+dot_token: 
+    | token='\\.' spaces { (lambda token: token)(token) }
 
-semicolon_token: token=r';' spaces { token }
+comma_token: 
+    | token=',' spaces { (lambda token: token)(token) }
 
-dot_token: token=r'\.' spaces { token }
+star_token: 
+    | token='\\*' spaces { (lambda token: token)(token) }
 
-comma_token: token=r',' spaces { token }
+starstar_token: 
+    | token='\\*\\*' spaces { (lambda token: token)(token) }
 
-star_token: token=r'\*' spaces { token }
+assign_token: 
+    | token='=' !('=') spaces { (lambda token: token)(token) }
 
-starstar_token: token=r'\*\*' spaces { token }
+returns_token: 
+    | token='->' spaces { (lambda token: token)(token) }
 
-assign_token: token=r'=' !r'=' spaces { token }
+decorator_token: 
+    | token='@' spaces { (lambda token: token)(token) }
 
-returns_token: token=r'->' spaces { token }
+slash_token: 
+    | token='/' spaces { (lambda token: token)(token) }
 
-decorator_token: token=r'@' spaces { token }
+left_paren_token: 
+    | token='\\(' start_bracket spaces { (lambda token: token)(token) }
 
-slash_token: token=r'/' spaces { token }
+right_paren_token: 
+    | token='\\)' stop_bracket spaces { (lambda token: token)(token) }
 
-left_paren_token: token=r'\(' start_bracket spaces { token }
-right_paren_token: token=r'\)' stop_bracket spaces { token }
+left_bracket_token: 
+    | token='\\[' start_bracket spaces { (lambda token: token)(token) }
 
-left_bracket_token: token=r'\[' start_bracket spaces { token }
-right_bracket_token: token=r'\]' stop_bracket spaces { token }
+right_bracket_token: 
+    | token='\\]' stop_bracket spaces { (lambda token: token)(token) }
 
-left_brace_token: token=r'\{' start_bracket spaces { token }
-right_brace_token: token=r'\}' stop_bracket spaces { token }
+left_brace_token: 
+    | token='\\{' start_bracket spaces { (lambda token: token)(token) }
 
-# name tokens
+right_brace_token: 
+    | token='\\}' stop_bracket spaces { (lambda token: token)(token) }
 
-if_token: token=r'if\b' spaces { token }
+if_token: 
+    | token='if\\b' spaces { (lambda token: token)(token) }
 
-elif_token: token=r'elif\b' spaces { token }
+elif_token: 
+    | token='elif\\b' spaces { (lambda token: token)(token) }
 
-else_token: token=r'else\b' spaces { token }
+else_token: 
+    | token='else\\b' spaces { (lambda token: token)(token) }
 
-for_token: token=r'for\b' spaces { token }
+for_token: 
+    | token='for\\b' spaces { (lambda token: token)(token) }
 
-in_token: token=r'in\b' spaces { token }
+in_token: 
+    | token='in\\b' spaces { (lambda token: token)(token) }
 
-is_token: token=r'is\b' spaces { token }
+is_token: 
+    | token='is\\b' spaces { (lambda token: token)(token) }
 
-not_token: token=r'not\b' spaces { token }
+not_token: 
+    | token='not\\b' spaces { (lambda token: token)(token) }
 
-while_token: token=r'while\b' spaces { token }
+while_token: 
+    | token='while\\b' spaces { (lambda token: token)(token) }
 
-async_token: token=r'async\b' spaces { token }
+async_token: 
+    | token='async\\b' spaces { (lambda token: token)(token) }
 
-await_token: token=r'await\b' spaces { token if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error() }
+await_token: 
+    | token='await\\b' spaces { (lambda token: token if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error())(token) }
 
-return_token: token=r'return\b' spaces { token if char_parser.to_char_parser(self)._func_level[-1] else char_parser.to_char_parser(self)._error() }
+return_token: 
+    | token='return\\b' spaces { (lambda token: token if char_parser.to_char_parser(self)._func_level[-1] else char_parser.to_char_parser(self)._error())(token) }
 
-yield_token: token=r'yield\b' spaces { token if char_parser.to_char_parser(self)._func_level[-1] else char_parser.to_char_parser(self)._error() }
+yield_token: 
+    | token='yield\\b' spaces { (lambda token: token if char_parser.to_char_parser(self)._func_level[-1] else char_parser.to_char_parser(self)._error())(token) }
 
-from_token: token=r'from\b' spaces { token }
+from_token: 
+    | token='from\\b' spaces { (lambda token: token)(token) }
 
-lambda_token: token=r'lambda\b' spaces { token }
+lambda_token: 
+    | token='lambda\\b' spaces { (lambda token: token)(token) }
 
-pass_token: token=r'pass\b' spaces { token }
+pass_token: 
+    | token='pass\\b' spaces { (lambda token: token)(token) }
 
-del_token: token=r'del\b' spaces { token }
+del_token: 
+    | token='del\\b' spaces { (lambda token: token)(token) }
 
-raise_token: token=r'raise\b' spaces { token }
+raise_token: 
+    | token='raise\\b' spaces { (lambda token: token)(token) }
 
-assert_token: token=r'assert\b' spaces { token }
+assert_token: 
+    | token='assert\\b' spaces { (lambda token: token)(token) }
 
-break_token: token=r'break\b' spaces { token if char_parser.to_char_parser(self)._loop_level[-1] else char_parser.to_char_parser(self)._error() }
+break_token: 
+    | token='break\\b' spaces { (lambda token: token if char_parser.to_char_parser(self)._loop_level[-1] else char_parser.to_char_parser(self)._error())(token) }
 
-continue_token: token=r'continue\b' spaces { token if char_parser.to_char_parser(self)._loop_level[-1] else char_parser.to_char_parser(self)._error() }
+continue_token: 
+    | token='continue\\b' spaces { (lambda token: token if char_parser.to_char_parser(self)._loop_level[-1] else char_parser.to_char_parser(self)._error())(token) }
 
-import_token: token=r'import\b' spaces { token }
+import_token: 
+    | token='import\\b' spaces { (lambda token: token)(token) }
 
-as_token: token=r'as\b' spaces { token }
+as_token: 
+    | token='as\\b' spaces { (lambda token: token)(token) }
 
-global_token: token=r'global\b' spaces { token }
+global_token: 
+    | token='global\\b' spaces { (lambda token: token)(token) }
 
-nonlocal_token: token=r'nonlocal\b' spaces { token }
-
-type_token: token=r'type\b' spaces { token }
-
-and_token: token=r'and\b' spaces { token }
-
-or_token: token=r'or\b' spaces { token }
-
-def_token: token=r'def\b' spaces { token }
-
-try_token: token=r'try\b' spaces { token }
-
-except_token: token=r'except\b' spaces { token }
-
-finally_token: token=r'finally\b' spaces { token }
-
-with_token: token=r'with\b' spaces { token }
-
-match_token: token=r'match\b' spaces { token }
+nonlocal_token: 
+    | token='nonlocal\\b' spaces { (lambda token: token)(token) }
 
-case_token: token=r'case\b' spaces { token }
+type_token: 
+    | token='type\\b' spaces { (lambda token: token)(token) }
 
-class_token: token=r'class\b' spaces { token }
+and_token: 
+    | token='and\\b' spaces { (lambda token: token)(token) }
 
-none_token: token=r'None\b' spaces { token }
+or_token: 
+    | token='or\\b' spaces { (lambda token: token)(token) }
 
-true_token: token=r'True\b' spaces { token }
+def_token: 
+    | token='def\\b' spaces { (lambda token: token)(token) }
 
-false_token: token=r'False\b' spaces { token }
+try_token: 
+    | token='try\\b' spaces { (lambda token: token)(token) }
 
-# str literals
+except_token: 
+    | token='except\\b' spaces { (lambda token: token)(token) }
 
-start_stre_q: r'' {[char_parser.to_char_parser(self)._stre_level.append('\042')]}
-start_stre_a: r'' {[char_parser.to_char_parser(self)._stre_level.append('\047')]}
-start_stre_qqq: r'' {[char_parser.to_char_parser(self)._stre_level.append('\042\042\042')]}
-start_stre_aaa: r'' {[char_parser.to_char_parser(self)._stre_level.append('\047\047\047')]}
-start_stre_b: r'' {[char_parser.to_char_parser(self)._stre_level.append('\175')]}
+finally_token: 
+    | token='finally\\b' spaces { (lambda token: token)(token) }
 
-stre1: token=r'.' { [token,char_parser.to_char_parser(self)._stre_level.pop()][0] if +token==char_parser.to_char_parser(self)._stre_level[-1] else None }
-stre3: token=r'...' { [token,char_parser.to_char_parser(self)._stre_level.pop()][0] if +token==char_parser.to_char_parser(self)._stre_level[-1] else None }
-
-stre:
-    | stre1
-    | stre3
+with_token: 
+    | token='with\\b' spaces { (lambda token: token)(token) }
 
-str_char:
-    | 'str\0f'  token='\\{\\{'                { token('\173') }
-    | 'str\0f'  token='\\}\\}'                { token('\175') }
-    | 'str\0f'  token='\\{\\}'                { None }
-    | 'str\0f'  a=r'\{' value_begin=spaces value=f_expression as_token=assign_token? conversion='(![ras])?' format_spec=(r':' 'append_str\0f' start_stre_b str_end 'pop_str\0f' | r'\}') {
-        [
-            ast.Constant(
-                token = a,
-                value=char_parser.to_char_parser(self)._tokenizer.text[value_begin.pos:conversion.pos] if as_token else '',
-            ),
-            ast.FormattedValue(
-                token = a,
-                value=value,
-                conversion=ord(conversion()[-1]) if +conversion else 114 if isinstance(format_spec, char_parser.to_char_parser(self)._token) and as_token else -1,
-                format_spec=(
-                    None
-                        if isinstance(format_spec, char_parser.to_char_parser(self)._token) else
-                    ast.JoinedStr(
-                        token=a,
-                        values=[
-                            values
-                                if not values or isinstance(values[-1],ast.Constant) else
-                            values+[ast.Constant(token=format_spec[0], value='')]*0
-                        for values in [+format_spec[3]]][0][::-1]
-                    )
-                )
-            )
-        ][not as_token:]
-    }
-    | 'str\0'   token='\\\\\n'                { token('') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token }
-    | 'str\0'   token='\\\\\\\\'              { token('\\') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token }
-    | 'str\0'   token='\\\\\47'               { token("\47") if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token("\\\47") }
-    | 'str\0'   token='\\\\\42'               { token('\42') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token("\\\42") }
-    | 'str\0R'  token='\\\\a'                 { token('\7')  }
-    | 'str\0R'  token='\\\\b'                 { token('\10') }
-    | 'str\0R'  token='\\\\t'                 { token('\11') }
-    | 'str\0R'  token='\\\\n'                 { token('\12') }
-    | 'str\0R'  token='\\\\v'                 { token('\13') }
-    | 'str\0R'  token='\\\\f'                 { token('\14') }
-    | 'str\0R'  token='\\\\r'                 { token('\15') }
-    | 'str\0R'  token='\\\\[0-7][0-7]?[0-7]?' { token(chr([c if 'b' not in char_parser.to_char_parser(self)._str_level[-1] else c % 256 for c in [int(token()[1:], 8)]][0])) }
-    | 'str\0R'  token='\\\\x[0-9a-fA-F]{2}'   { token(chr(int(token()[2:], 16))) }
-    | 'str\0RB' token='\\\\N\\{[^}]*\\}'      { [None if c is None else token(c) for c in [char_parser.to_char_parser(self)._unicode_lookup(token()[3:-1])]][0] }
-    | 'str\0RB' token='\\\\u[0-9a-fA-F]{4}'   { token(chr(int(token()[2:], 16))) if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token }
-    | 'str\0RB' token='\\\\U[0-9a-fA-F]{8}'   { [token(chr(c)) if c < 0x110000 else None for c in [int(token()[2:], 16)]][0] if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token }
-    | 'str\0'   token=r'\n'                   { token if len(char_parser.to_char_parser(self)._stre_level[-1])==3 else char_parser.to_char_parser(self)._error() }
-    | 'str\0B'   token=r'[^{}\42\47\\\n]+'    { token }
-    | 'str\0b'   token=r'[^{}\42\47\\\n]+'    { token if all([len(t.encode())<2 for t in +token]) else None }
-    | 'str\0b'   token=r'.'                   { token if all([len(t.encode())<2 for t in +token]) else None }
-    | 'str\0B'   token=r'.'                   { token }
+match_token: 
+    | token='match\\b' spaces { (lambda token: token)(token) }
 
-str_end:
-    | a=stre { char_parser.to_char_parser(self)._make_true([]) }
-    | a=str_char b=str_end {
-        [
-            b().extend(a[::-1])
-                if not isinstance(a, char_parser.to_char_parser(self)._token) else
-            b().append(ast.Constant(token=a, value=+a)),
-            b
-        ][1]
-    }
+case_token: 
+    | token='case\\b' spaces { (lambda token: token)(token) }
 
-str_content:
-    | token='\x27\x27\x27' start_stre_aaa data=str_end { data }
-    | token='\x22\x22\x22' start_stre_qqq data=str_end { data }
-    | token='\x27' start_stre_a data=str_end { data }
-    | token='\x22' start_stre_q data=str_end { data }
+class_token: 
+    | token='class\\b' spaces { (lambda token: token)(token) }
 
-formatted_str_data: data=str_content { char_parser.to_char_parser(self)._make_true(data()[::-1]) }
+none_token: 
+    | token='None\\b' spaces { (lambda token: token)(token) }
 
-simple_str_data: data=formatted_str_data { char_parser.to_char_parser(self)._make_true(''.join([n.value for n in +data])) }
+true_token: 
+    | token='True\\b' spaces { (lambda token: token)(token) }
 
-byte_str_data: data=simple_str_data { char_parser.to_char_parser(self)._make_true(bytes([*map(ord, +data)])) }
+false_token: 
+    | token='False\\b' spaces { (lambda token: token)(token) }
 
+start_stre_q: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._stre_level.append('"')])() }
 
+start_stre_a: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._stre_level.append("'")])() }
 
-str_with_prefix:
-    | token=r'[Rr][Bb]|[Bb][Rr]' 'append_str\0br' data=byte_str_data?      'pop_str\0br' { ast.Constant(token=token,  value=+data) if data else None }
-    | token=r'[Ff][Rr]|[Rr][Ff]' 'append_str\0fr' data=formatted_str_data? 'pop_str\0fr' { ast.JoinedStr(token=token, values=+data) if data else None }
-    | token=r'[Bb]'              'append_str\0b'  data=byte_str_data?      'pop_str\0b'  { ast.Constant(token=token,  value=+data) if data else None }
-    | token=r'[fF]'              'append_str\0f'  data=formatted_str_data? 'pop_str\0f'  { ast.JoinedStr(token=token, values=+data) if data else None }
-    | token=r'[rR]'              'append_str\0r'  data=simple_str_data?    'pop_str\0r'  { ast.Constant(token=token,  value=+data) if data else None }
-    | token=r'[Uu]?'             'append_str\0'   data=simple_str_data?    'pop_str\0'   { ast.Constant(token=token,  value=+data, kind=+token if +token else None) if data else None }
+start_stre_qqq: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._stre_level.append('"""')])() }
 
-stringliteral: tokens=(str_with_prefix spaces)+ {
-    char_parser.to_char_parser(self)._join_str([token[0] for token in tokens])
-}
+start_stre_aaa: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._stre_level.append("'''")])() }
 
-# int literals
+start_stre_b: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._stre_level.append('}')])() }
 
-integer:
-    | r'[1-9][_0-9]*'
-    | r'0[bB][_01]+'
-    | r'0[oO][_0-7]+'
-    | r'0[xX][_0-9a-fA-F]+'
-    | r'0[_0]*'
+stre1: 
+    | token='.' { (lambda token: [token, char_parser.to_char_parser(self)._stre_level.pop()][0] if +token == char_parser.to_char_parser(self)._stre_level[-1] else None)(token) }
 
-digitpart: r'[0-9][_0-9]*'
+stre3: 
+    | token='...' { (lambda token: [token, char_parser.to_char_parser(self)._stre_level.pop()][0] if +token == char_parser.to_char_parser(self)._stre_level[-1] else None)(token) }
 
-pointfloat:
-    | a=[digitpart] b=r'\.' c=digitpart { b+c if a is None else a+b+c }
-    | a=digitpart b=r'\.' { a+b }
+stre: 
+    | stre1=stre1 { (lambda stre1: stre1)(stre1) }
+    | stre3=stre3 { (lambda stre3: stre3)(stre3) }
 
-exponentfloat : a=(pointfloat | digitpart) b=r'[eE][+-]?' c=digitpart { a+b+c }
+str_char: 
+    | 'str\x00f' token='\\{\\{' { (lambda token: token('{'))(token) }
+    | 'str\x00f' token='\\}\\}' { (lambda token: token('}'))(token) }
+    | 'str\x00f' '\\{\\}' { (lambda : None)() }
+    | 'str\x00f' a='\\{' value_begin=spaces value=f_expression as_token=(assign_token)? conversion='(![ras])?' format_spec=auto_generated_0__tmp_3 { (lambda a, value_begin, value, as_token, conversion, format_spec: [ast.Constant(token=a, value=char_parser.to_char_parser(self)._tokenizer.text[value_begin.pos:conversion.pos] if as_token else ''), ast.FormattedValue(token=a, value=value, conversion=ord(conversion()[-1]) if +conversion else 114 if isinstance(format_spec, char_parser.to_char_parser(self)._token) and as_token else -1, format_spec=None if isinstance(format_spec, char_parser.to_char_parser(self)._token) else ast.JoinedStr(token=a, values=[values if not values or isinstance(values[-1], ast.Constant) else values + [ast.Constant(token=format_spec[0], value='')] * 0 for values in [+format_spec[3]]][0][::-1]))][not as_token:])(a, value_begin, value, as_token, conversion, format_spec) }
+    | 'str\x00' token='\\\\\n' { (lambda token: token('') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token)(token) }
+    | 'str\x00' token='\\\\\\\\' { (lambda token: token('\\') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token)(token) }
+    | 'str\x00' token="\\\\'" { (lambda token: token("'") if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token("\\'"))(token) }
+    | 'str\x00' token='\\\\"' { (lambda token: token('"') if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token('\\"'))(token) }
+    | 'str\x00R' token='\\\\a' { (lambda token: token('\x07'))(token) }
+    | 'str\x00R' token='\\\\b' { (lambda token: token('\x08'))(token) }
+    | 'str\x00R' token='\\\\t' { (lambda token: token('\t'))(token) }
+    | 'str\x00R' token='\\\\n' { (lambda token: token('\n'))(token) }
+    | 'str\x00R' token='\\\\v' { (lambda token: token('\x0b'))(token) }
+    | 'str\x00R' token='\\\\f' { (lambda token: token('\x0c'))(token) }
+    | 'str\x00R' token='\\\\r' { (lambda token: token('\r'))(token) }
+    | 'str\x00R' token='\\\\[0-7][0-7]?[0-7]?' { (lambda token: token(chr([c if 'b' not in char_parser.to_char_parser(self)._str_level[-1] else c % 256 for c in [int(token()[1:], 8)]][0])))(token) }
+    | 'str\x00R' token='\\\\x[0-9a-fA-F]{2}' { (lambda token: token(chr(int(token()[2:], 16))))(token) }
+    | 'str\x00RB' token='\\\\N\\{[^}]*\\}' { (lambda token: [None if c is None else token(c) for c in [char_parser.to_char_parser(self)._unicode_lookup(token()[3:-1])]][0])(token) }
+    | 'str\x00RB' token='\\\\u[0-9a-fA-F]{4}' { (lambda token: token(chr(int(token()[2:], 16))) if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token)(token) }
+    | 'str\x00RB' token='\\\\U[0-9a-fA-F]{8}' { (lambda token: [token(chr(c)) if c < 1114112 else None for c in [int(token()[2:], 16)]][0] if 'r' not in char_parser.to_char_parser(self)._str_level[-1] else token)(token) }
+    | 'str\x00' token='\\n' { (lambda token: token if len(char_parser.to_char_parser(self)._stre_level[-1]) == 3 else char_parser.to_char_parser(self)._error())(token) }
+    | 'str\x00B' token='[^{}\\42\\47\\\\\\n]+' { (lambda token: token)(token) }
+    | 'str\x00b' token='[^{}\\42\\47\\\\\\n]+' { (lambda token: token if all([len(t.encode()) < 2 for t in +token]) else None)(token) }
+    | 'str\x00b' token='.' { (lambda token: token if all([len(t.encode()) < 2 for t in +token]) else None)(token) }
+    | 'str\x00B' token='.' { (lambda token: token)(token) }
 
-floatnumber:
-    | exponentfloat
-    | pointfloat
+str_end: 
+    | stre { (lambda : char_parser.to_char_parser(self)._make_true([]))() }
+    | a=str_char b=str_end { (lambda a, b: [b().extend(a[::-1]) if not isinstance(a, char_parser.to_char_parser(self)._token) else b().append(ast.Constant(token=a, value=+a)), b][1])(a, b) }
 
-imagnumber: a=(floatnumber | digitpart) b=r'[jJ]' { a+b }
+str_content: 
+    | "'''" start_stre_aaa data=str_end { (lambda data: data)(data) }
+    | '"""' start_stre_qqq data=str_end { (lambda data: data)(data) }
+    | "'" start_stre_a data=str_end { (lambda data: data)(data) }
+    | '"' start_stre_q data=str_end { (lambda data: data)(data) }
 
-# literals and constants
+formatted_str_data: 
+    | data=str_content { (lambda data: char_parser.to_char_parser(self)._make_true(data()[::-1]))(data) }
 
-literal:
-    | stringliteral
-    | token=imagnumber spaces { ast.Constant(token=token, value=complex(+token)) }
-    | token=floatnumber spaces { ast.Constant(token=token, value=float(+token)) }
-    | token=integer spaces { ast.Constant(token=token, value=int(+token, 0)) }
+simple_str_data: 
+    | data=formatted_str_data { (lambda data: char_parser.to_char_parser(self)._make_true(''.join([n.value for n in +data])))(data) }
 
-constant:
-    | token=none_token spaces { ast.Constant(token=token, value=None) }
-    | token=r'\.\.\.' spaces { ast.Constant(token=token, value=...) }
-    | token=false_token spaces { ast.Constant(token=token, value=False) }
-    | token=true_token spaces { ast.Constant(token=token, value=True) }
+byte_str_data: 
+    | data=simple_str_data { (lambda data: char_parser.to_char_parser(self)._make_true(bytes([*map(ord, +data)])))(data) }
 
-# names
+str_with_prefix: 
+    | token='[Rr][Bb]|[Bb][Rr]' 'append_str\x00br' data=(byte_str_data)? 'pop_str\x00br' { (lambda token, data: ast.Constant(token=token, value=+data) if data else None)(token, data) }
+    | token='[Ff][Rr]|[Rr][Ff]' 'append_str\x00fr' data=(formatted_str_data)? 'pop_str\x00fr' { (lambda token, data: ast.JoinedStr(token=token, values=+data) if data else None)(token, data) }
+    | token='[Bb]' 'append_str\x00b' data=(byte_str_data)? 'pop_str\x00b' { (lambda token, data: ast.Constant(token=token, value=+data) if data else None)(token, data) }
+    | token='[fF]' 'append_str\x00f' data=(formatted_str_data)? 'pop_str\x00f' { (lambda token, data: ast.JoinedStr(token=token, values=+data) if data else None)(token, data) }
+    | token='[rR]' 'append_str\x00r' data=(simple_str_data)? 'pop_str\x00r' { (lambda token, data: ast.Constant(token=token, value=+data) if data else None)(token, data) }
+    | token='[Uu]?' 'append_str\x00' data=(simple_str_data)? 'pop_str\x00' { (lambda token, data: ast.Constant(token=token, value=+data, kind=+token if +token else None) if data else None)(token, data) }
 
-identifier: token=r'[^\W0-9]\w*' spaces { token }
-
-get_name: token=identifier { ast.Name(token=token, id=+token, ctx=ast.Load(token=token)) }
-
-set_name: token=identifier { ast.Name(token=token, id=+token, ctx=ast.Store(token=token)) }
-
-del_name: token=identifier { ast.Name(token=token, id=+token, ctx=ast.Del(token=token)) }
-
-get_attributeref_suffix: dot_token attr=identifier { lambda value: ast.Attribute(token=value.token, value=value, attr=+attr, ctx=ast.Load(token=value.token)) }
-
-set_attributeref: value=primary { ast.Attribute(token=value.token, value=value.value, attr=value.attr, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Attribute) else None }
-
-del_attributeref: value=primary { ast.Attribute(token=value.token, value=value.value, attr=value.attr, ctx=ast.Del(token=value.token)) if isinstance(value, ast.Attribute) else None }
-
-sub_item: #local
-    | lower=[expression] token=colon_token upper=[expression] step=[ colon_token [expression] ] { ast.Slice(token=token, lower=lower, upper=upper, step=step[1] if step else None) }
-    | expression
-
-get_subscription_suffix: left_bracket_token slices=comma_token.sub_item+ tc=comma_token? right_bracket_token { lambda value: ast.Subscript(token=value.token, value=value, slice=ast.Tuple(token=value.token, elts=slices, ctx=ast.Load(token=value.token)) if len(slices) != 1 or tc else slices[0], ctx=ast.Load(token=value.token)) }
-
-set_subscription: value=primary { ast.Subscript(token=value.token, value=value.value, slice=value.slice, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Subscript) else None }
-
-del_subscription: value=primary { ast.Subscript(token=value.token, value=value.value, slice=value.slice, ctx=ast.Del(token=value.token)) if isinstance(value, ast.Subscript) else None }
-
-# displays
-
-arithmetic_parentheses:
-    | left_paren_token value=yield_expression right_paren_token { value }
-    | left_paren_token value=walrus_expression right_paren_token { value }
-
-comp_for: a=([async_token] for_token set_multiple_targets in_token ready_to_if_expr (if_token ready_to_if_expr)*)+ {
-    char_parser.to_char_parser(self)._make_true([
-        ast.comprehension(
-            token=a[1],
-            target=a[2],
-            iter=a[4],
-            ifs=[a[1] for a in a[5]] if a[5] else [],
-            is_async=+bool(a[0]),
-        ) if not a[0] or char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error()
-    for a in a])
-} #local
-
-display_item: #local
-    | walrus_expression
-    | star_token value=ready_to_be_starred_expr { ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)) }
-
-display_content: #local
-    | walrus_expression comp_for
-    | comma_token.display_item+ comma_token?
-
-tuple_display: token=left_paren_token content=display_content? right_paren_token {
-    None
-        if content and not content[1] and len(content[0]) == 1 else
-    ast.GeneratorExp(token=token, elt=content[0], generators=+content[1])
-        if content and content[1] and +content[1] != ',' else
-    ast.Tuple(token=token, elts=content[0] if content else [], ctx=ast.Load(token=token))
-}
+stringliteral: 
+    | tokens=auto_generated_0__loop1_4 { (lambda tokens: char_parser.to_char_parser(self)._join_str([token[0] for token in tokens]))(tokens) }
 
-list_display: token=left_bracket_token content=display_content? right_bracket_token {
-    ast.ListComp(token=token, elt=content[0], generators=+content[1])
-        if content and content[1] and +content[1] != ',' else
-    ast.List(token=token, elts=content[0] if content else [], ctx=ast.Load(token=token))
-}
+integer: 
+    | literal='[1-9][_0-9]*' { (lambda literal: literal)(literal) }
+    | literal='0[bB][_01]+' { (lambda literal: literal)(literal) }
+    | literal='0[oO][_0-7]+' { (lambda literal: literal)(literal) }
+    | literal='0[xX][_0-9a-fA-F]+' { (lambda literal: literal)(literal) }
+    | literal='0[_0]*' { (lambda literal: literal)(literal) }
 
-set_display: token=left_brace_token content=display_content right_brace_token {
-    ast.SetComp(token=token, elt=content[0], generators=+content[1])
-        if content[1] and +content[1] != ',' else
-    ast.Set(token=token, elts=content[0] if content else [])
-}
+digitpart: 
+    | literal='[0-9][_0-9]*' { (lambda literal: literal)(literal) }
 
-dict_display_item: #local
-    | key=expression colon_token value=expression { [key, value] }
-    | starstar_token value=ready_to_be_starred_expr { [None, value] }
-
-dict_display_content: #local
-    | expression colon_token expression comp_for
-    | comma_token.dict_display_item+ comma_token?
-
-dict_display: token=left_brace_token content=dict_display_content? right_brace_token {
-    ast.Dict(token=token, keys=[], values=[])
-        if not content else
-    ast.Dict(token=token, **dict(zip('keys values'.split(), map(list, zip(*content[0])))))
-        if len(content) == 2 else
-    ast.DictComp(token=token, key=content[0], value=content[2], generators=+content[3])
-}
+pointfloat: 
+    | a=(digitpart)? b='\\.' c=digitpart { (lambda a, b, c: b + c if a is None else a + b + c)(a, b, c) }
+    | a=digitpart b='\\.' { (lambda a, b: a + b)(a, b) }
 
-call_arg: #local
-    | arg=identifier assign_token value=expression { ast.keyword(token=arg, arg=+arg, value=value) }
-    | starstar_token value=expression { ast.keyword(token=value.token, value=value) }
-    | star_token value=expression { ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)) }
-    | walrus_expression
+exponentfloat: 
+    | a=auto_generated_0__tmp_5 b='[eE][+-]?' c=digitpart { (lambda a, b, c: a + b + c)(a, b, c) }
 
-call_args: '' args=[comma_token.call_arg+ comma_token?] {
-    dict(args=[], keywords=[])
-        if not args else
-    dict(args=[arg for arg in args[0] if type(arg)!=ast.keyword], keywords=[arg for arg in args[0] if type(arg)==ast.keyword])
-        if not any([
-            isinstance(arg1, ast.keyword) and not isinstance(arg2, ast.keyword | ast.Starred)
-                or
-            isinstance(arg1, ast.keyword) and arg1.arg==None and not isinstance(arg2, ast.keyword)
-        for n,arg2 in enumerate(args[0]) for arg1 in args[0][:n]]) else
-    None
-}
+floatnumber: 
+    | exponentfloat=exponentfloat { (lambda exponentfloat: exponentfloat)(exponentfloat) }
+    | pointfloat=pointfloat { (lambda pointfloat: pointfloat)(pointfloat) }
 
-call_suffix: token=left_paren_token args=(walrus_expression comp_for | call_args) right_paren_token {
-    lambda func: (
-        ast.Call(token=token, func=func, args=[ast.GeneratorExp(token=func.token, elt=args[0], generators=+args[1])], keywords=[])
-            if isinstance(args, list) else
-        ast.Call(token=token, func=func, args=args['args'], keywords=args['keywords'])
-    )
-}
+imagnumber: 
+    | a=auto_generated_0__tmp_6 b='[jJ]' { (lambda a, b: a + b)(a, b) }
 
-# primary
+literal: 
+    | stringliteral=stringliteral { (lambda stringliteral: stringliteral)(stringliteral) }
+    | token=imagnumber spaces { (lambda token: ast.Constant(token=token, value=complex(+token)))(token) }
+    | token=floatnumber spaces { (lambda token: ast.Constant(token=token, value=float(+token)))(token) }
+    | token=integer spaces { (lambda token: ast.Constant(token=token, value=int(+token, 0)))(token) }
 
-suffix:
-    | call_suffix
-    | get_subscription_suffix
-    | get_attributeref_suffix
+constant: 
+    | token=none_token spaces { (lambda token: ast.Constant(token=token, value=None))(token) }
+    | token='\\.\\.\\.' spaces { (lambda token: ast.Constant(token=token, value=...))(token) }
+    | token=false_token spaces { (lambda token: ast.Constant(token=token, value=False))(token) }
+    | token=true_token spaces { (lambda token: ast.Constant(token=token, value=True))(token) }
 
-atom:
-    | tuple_display
-    | list_display
-    | dict_display
-    | set_display
-    | literal
-    | constant
-    | get_name
-    | arithmetic_parentheses
+identifier: 
+    | token='[^\\W0-9]\\w*' spaces { (lambda token: token)(token) }
 
-primary: value=atom suffixes=suffix* {
-    char_parser.to_char_parser(self)._functools.reduce(
-        lambda value, suffix: suffix(value),
-        suffixes,
-        value,
-    )
-}
+get_name: 
+    | token=identifier { (lambda token: ast.Name(token=token, id=+token, ctx=ast.Load(token=token)))(token) }
 
-# operators
+set_name: 
+    | token=identifier { (lambda token: ast.Name(token=token, id=+token, ctx=ast.Store(token=token)))(token) }
 
-await_expr: new_node=await_token? value=primary { ast.Await(token=value.token, value=value) if new_node else value }
+del_name: 
+    | token=identifier { (lambda token: ast.Name(token=token, id=+token, ctx=ast.Del(token=token)))(token) }
 
-power: left=(await_expr) new_node=[starstar_token u_expr] { ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+new_node[0]](token=new_node[0]), right=new_node[1]) if new_node else left } #local
+get_attributeref_suffix: 
+    | dot_token attr=identifier { (lambda attr: lambda value: ast.Attribute(token=value.token, value=value, attr=+attr, ctx=ast.Load(token=value.token)))(attr) }
 
-u_expr: #local
-    | power
-    | op=u_token operand=u_expr { ast.UnaryOp(token=operand.token, operand=operand, op=char_parser.to_char_parser(self)._un_op_to_ast[+op](token=op)) }
+set_attributeref: 
+    | value=primary { (lambda value: ast.Attribute(token=value.token, value=value.value, attr=value.attr, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Attribute) else None)(value) }
 
-m_expr: left=u_expr right=(m_token u_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+del_attributeref: 
+    | value=primary { (lambda value: ast.Attribute(token=value.token, value=value.value, attr=value.attr, ctx=ast.Del(token=value.token)) if isinstance(value, ast.Attribute) else None)(value) }
 
-a_expr: left=m_expr right=(a_token m_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+sub_item: 
+    | lower=(expression)? token=colon_token upper=(expression)? step=(auto_generated_0__tmp_7)? { (lambda lower, token, upper, step: ast.Slice(token=token, lower=lower, upper=upper, step=step[1] if step else None))(lower, token, upper, step) }
+    | expression=expression { (lambda expression: expression)(expression) }
 
-shift_expr: left=a_expr right=(shift_token a_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+get_subscription_suffix: 
+    | left_bracket_token slices=auto_generated_0__gather_8 tc=(comma_token)? right_bracket_token { (lambda slices, tc: lambda value: ast.Subscript(token=value.token, value=value, slice=ast.Tuple(token=value.token, elts=slices, ctx=ast.Load(token=value.token)) if len(slices) != 1 or tc else slices[0], ctx=ast.Load(token=value.token)))(slices, tc) }
 
-and_expr: left=shift_expr right=(bit_and_token shift_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+set_subscription: 
+    | value=primary { (lambda value: ast.Subscript(token=value.token, value=value.value, slice=value.slice, ctx=ast.Store(token=value.token)) if isinstance(value, ast.Subscript) else None)(value) }
 
-xor_expr: left=and_expr right=(bit_xor_token and_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+del_subscription: 
+    | value=primary { (lambda value: ast.Subscript(token=value.token, value=value.value, slice=value.slice, ctx=ast.Del(token=value.token)) if isinstance(value, ast.Subscript) else None)(value) }
 
-or_expr: left=xor_expr right=(bit_or_token xor_expr)* { char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]),right,left) } #local
+arithmetic_parentheses: 
+    | left_paren_token value=yield_expression right_paren_token { (lambda value: value)(value) }
+    | left_paren_token value=walrus_expression right_paren_token { (lambda value: value)(value) }
 
-ready_to_be_starred_expr: or_expr
+comp_for: 
+    | a=auto_generated_0__loop1_10 { (lambda a: char_parser.to_char_parser(self)._make_true([ast.comprehension(token=a[1], target=a[2], iter=a[4], ifs=[a[1] for a in a[5]] if a[5] else [], is_async=+bool(a[0])) if not a[0] or char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error() for a in a]))(a) }
 
-comp_operator: #local
-    | op=comp_token { char_parser.to_char_parser(self)._bin_op_to_ast[+op](token=op) }
-    | a=is_token s=not_token? { ast.IsNot(token=a) if s else ast.Is(token=a) }
-    | s=not_token? a=in_token { ast.NotIn(token=a) if s else ast.In(token=a) }
+display_item: 
+    | walrus_expression=walrus_expression { (lambda walrus_expression: walrus_expression)(walrus_expression) }
+    | star_token value=ready_to_be_starred_expr { (lambda value: ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)))(value) }
 
-comparison: left=ready_to_be_starred_expr new_node=(comp_operator ready_to_be_starred_expr)* {
-    ast.Compare(
-        token=left.token,
-        left=left,
-        ops=[op for op,comparator in new_node],
-        comparators=[comparator for op,comparator in new_node],
-    ) if new_node else left
-} #local
+display_content: 
+    | walrus_expression=walrus_expression comp_for=comp_for { (lambda walrus_expression, comp_for: [walrus_expression, comp_for])(walrus_expression, comp_for) }
+    | auto_generated_0__gather_11=auto_generated_0__gather_11 opt=(comma_token)? { (lambda _gather_11, opt: [_gather_11, opt])(auto_generated_0__gather_11, opt) }
 
-not_test : #local
-    | op=not_token operand=not_test { ast.UnaryOp(token=operand.token, op=ast.Not(token=operand.token), operand=operand) }
-    | comparison
+tuple_display: 
+    | token=left_paren_token content=(display_content)? right_paren_token { (lambda token, content: None if content and (not content[1]) and (len(content[0]) == 1) else ast.GeneratorExp(token=token, elt=content[0], generators=+content[1]) if content and content[1] and (+content[1] != ',') else ast.Tuple(token=token, elts=content[0] if content else [], ctx=ast.Load(token=token)))(token, content) }
 
-and_test: left=not_test right=(and_token not_test)* { ast.BoolOp(token=left.token, op=ast.And(token=left.token), values=[left] + [value[1] for value in right]) if right else left } #local
+list_display: 
+    | token=left_bracket_token content=(display_content)? right_bracket_token { (lambda token, content: ast.ListComp(token=token, elt=content[0], generators=+content[1]) if content and content[1] and (+content[1] != ',') else ast.List(token=token, elts=content[0] if content else [], ctx=ast.Load(token=token)))(token, content) }
 
-or_test: left=and_test right=(or_token and_test)* { ast.BoolOp(token=left.token, op=ast.Or(token=left.token), values=[left] + [value[1] for value in right]) if right else left } #local
+set_display: 
+    | token=left_brace_token content=display_content right_brace_token { (lambda token, content: ast.SetComp(token=token, elt=content[0], generators=+content[1]) if content[1] and +content[1] != ',' else ast.Set(token=token, elts=content[0] if content else []))(token, content) }
 
-ready_to_if_expr: or_test
+dict_display_item: 
+    | key=expression colon_token value=expression { (lambda key, value: [key, value])(key, value) }
+    | starstar_token value=ready_to_be_starred_expr { (lambda value: [None, value])(value) }
 
-conditional_expression: left=ready_to_if_expr new_node=[if_token ready_to_if_expr else_token expression] { ast.IfExp(token=left.token, body=left, test=new_node[1], orelse=new_node[3]) if new_node else left }
+dict_display_content: 
+    | expression=expression colon_token=colon_token expression_1=expression comp_for=comp_for { (lambda expression, colon_token, expression_1, comp_for: [expression, colon_token, expression_1, comp_for])(expression, colon_token, expression_1, comp_for) }
+    | auto_generated_0__gather_13=auto_generated_0__gather_13 opt=(comma_token)? { (lambda _gather_13, opt: [_gather_13, opt])(auto_generated_0__gather_13, opt) }
 
-expression:
-    | token=lambda_token args=parameter_list_lmbd colon_token body=expression {
-        ast.Lambda(
-            token=token,
-            args=args,
-            body=body,
-        )
-    }
-    | conditional_expression
+dict_display: 
+    | token=left_brace_token content=(dict_display_content)? right_brace_token { (lambda token, content: ast.Dict(token=token, keys=[], values=[]) if not content else ast.Dict(token=token, **dict(zip('keys values'.split(), map(list, zip(*content[0]))))) if len(content) == 2 else ast.DictComp(token=token, key=content[0], value=content[2], generators=+content[3]))(token, content) }
 
-tupled_expression_item: #local
-    | expression
-    | star_token value=ready_to_be_starred_expr { ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)) }
+call_arg: 
+    | arg=identifier assign_token value=expression { (lambda arg, value: ast.keyword(token=arg, arg=+arg, value=value))(arg, value) }
+    | starstar_token value=expression { (lambda value: ast.keyword(token=value.token, value=value))(value) }
+    | star_token value=expression { (lambda value: ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)))(value) }
+    | walrus_expression=walrus_expression { (lambda walrus_expression: walrus_expression)(walrus_expression) }
 
-tupled_expression: vs=comma_token.tupled_expression_item+ tc=comma_token? { vs[0] if len(vs) == 1 and not tc else ast.Tuple(token=vs[0].token, elts=vs, ctx=ast.Load(token=vs[0].token)) }
+call_args: 
+    | '' args=(auto_generated_0__tmp_15)? { (lambda args: dict(args=[], keywords=[]) if not args else dict(args=[arg for arg in args[0] if type(arg) != ast.keyword], keywords=[arg for arg in args[0] if type(arg) == ast.keyword]) if not any([isinstance(arg1, ast.keyword) and (not isinstance(arg2, ast.keyword | ast.Starred)) or (isinstance(arg1, ast.keyword) and arg1.arg == None and (not isinstance(arg2, ast.keyword))) for (n, arg2) in enumerate(args[0]) for arg1 in args[0][:n]]) else None)(args) }
 
-walrus_expression: new_node=[set_name walrus_token] value=expression { ast.NamedExpr(token=value.token, target=new_node[0], value=value) if new_node else value }
+call_suffix: 
+    | token=left_paren_token args=auto_generated_0__tmp_16 right_paren_token { (lambda token, args: lambda func: ast.Call(token=token, func=func, args=[ast.GeneratorExp(token=func.token, elt=args[0], generators=+args[1])], keywords=[]) if isinstance(args, list) else ast.Call(token=token, func=func, args=args['args'], keywords=args['keywords']))(token, args) }
 
-yield_expression:
-    | token=yield_token from_token value=expression { ast.YieldFrom(token=token, value=value) }
-    | token=yield_token value=tupled_expression? { ast.Yield(token=token, value=value) }
-    | tupled_expression
+suffix: 
+    | call_suffix=call_suffix { (lambda call_suffix: call_suffix)(call_suffix) }
+    | get_subscription_suffix=get_subscription_suffix { (lambda get_subscription_suffix: get_subscription_suffix)(get_subscription_suffix) }
+    | get_attributeref_suffix=get_attributeref_suffix { (lambda get_attributeref_suffix: get_attributeref_suffix)(get_attributeref_suffix) }
 
-f_expression:
-    | yield_expression
-    | conditional_expression
+atom: 
+    | tuple_display=tuple_display { (lambda tuple_display: tuple_display)(tuple_display) }
+    | list_display=list_display { (lambda list_display: list_display)(list_display) }
+    | dict_display=dict_display { (lambda dict_display: dict_display)(dict_display) }
+    | set_display=set_display { (lambda set_display: set_display)(set_display) }
+    | literal=literal { (lambda literal: literal)(literal) }
+    | constant=constant { (lambda constant: constant)(constant) }
+    | get_name=get_name { (lambda get_name: get_name)(get_name) }
+    | arithmetic_parentheses=arithmetic_parentheses { (lambda arithmetic_parentheses: arithmetic_parentheses)(arithmetic_parentheses) }
 
-# indentation
+primary: 
+    | value=atom suffixes=(suffix)* { (lambda value, suffixes: char_parser.to_char_parser(self)._functools.reduce(lambda value, suffix: suffix(value), suffixes, value))(value, suffixes) }
 
-start_bracket: r'' {[char_parser.to_char_parser(self)._bracket_level.append(None)]}
+await_expr: 
+    | new_node=(await_token)? value=primary { (lambda new_node, value: ast.Await(token=value.token, value=value) if new_node else value)(new_node, value) }
 
-stop_bracket: r'' {[char_parser.to_char_parser(self)._bracket_level.pop()]}
+power: 
+    | left=await_expr new_node=(auto_generated_0__tmp_18)? { (lambda left, new_node: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+new_node[0]](token=new_node[0]), right=new_node[1]) if new_node else left)(left, new_node) }
 
-start_loop: r'' {[char_parser.to_char_parser(self)._loop_level.append(1)]}
-
-stop_loop: r'' {[char_parser.to_char_parser(self)._loop_level.pop()]}
+u_expr: 
+    | power=power { (lambda power: power)(power) }
+    | op=u_token operand=u_expr { (lambda op, operand: ast.UnaryOp(token=operand.token, operand=operand, op=char_parser.to_char_parser(self)._un_op_to_ast[+op](token=op)))(op, operand) }
 
-start_func: r'' {[char_parser.to_char_parser(self)._loop_level.append(0), char_parser.to_char_parser(self)._func_level.append(1)]}
-
-stop_func: r'' {[char_parser.to_char_parser(self)._loop_level.pop(), char_parser.to_char_parser(self)._func_level.pop()]}
-
-start_coro: r'' {[char_parser.to_char_parser(self)._loop_level.append(0), char_parser.to_char_parser(self)._func_level.append(2)]}
-
-stop_coro: r'' {[char_parser.to_char_parser(self)._loop_level.pop(), char_parser.to_char_parser(self)._func_level.pop()]}
-
-indent: a=spaces_for_indent {
-    [char_parser.to_char_parser(self)._indent_levels.__setitem__(-1, +a), a][1]
-        if
-            char_parser.to_char_parser(self)._indent_levels[-1] == None
-                and
-            a() != char_parser.to_char_parser(self)._indent_levels[-2]
-                and
-            a().startswith(char_parser.to_char_parser(self)._indent_levels[-2])
-        else
-    [None, a][char_parser.to_char_parser(self)._indent_levels[-1] == +a]
-}
-
-# lines
-
-semicolon_separated_statements: a=(semicolon_token).simple_stmt+ semicolon_token? new_line { char_parser.to_char_parser(self)._make_true(a) } #local
-
-line_content: #local
-    | a=multiple_lines_statement {char_parser.to_char_parser(self)._make_true([a])}
-    | indent a=semicolon_separated_statements { a }
-
-line: #local
-    | r'$' { None }
-    | spaces new_line { char_parser.to_char_parser(self)._make_true([]) }
-    | a=line_content { a }
-
-code_block: 'append_indent\0' a=line+ 'pop_indent\0' {
-    char_parser.to_char_parser(self)._make_true([d for s in a for d in +s])
-} #local
-
-body: #local
-    | semicolon_separated_statements
-    | new_line a=code_block { a if +a else None }
-
-colon_and_body: colon_token a=body { a }
-
-colon_and_loop_body: start_loop a=colon_and_body stop_loop { a }
-
-colon_and_func_body: start_func a=colon_and_body stop_func { a }
-
-colon_and_coro_body: start_coro a=colon_and_body stop_coro { a }
-
-start: token=r'^' a=line* r'$' {
-    ast.Module(
-        token=token,
-        body=[d for s in a for d in +s],
-        type_ignores=[]
-    )
-}
-
-# multiline statements
-
-multiple_lines_statement: #TODO match
-    | coro_def
-    | func_def
-    | async_for_stmt
-    | for_stmt
-    | while_stmt
-    | if_stmt
-    | try_stmt
-    | with_stmt
-    | async_with_stmt
-    | class_def
-
-if_stmt: indent=indent token=if_token test=walrus_expression body=colon_and_body mebbe=(indent elif_token walrus_expression colon_and_body)* orelse=[indent else_token colon_and_body] {
-        char_parser.to_char_parser(self)._functools.reduce(
-            lambda a,s: [ast.If(token=s[1], test=s[2], body=+s[3], orelse=a)],
-            ([[indent, token, test, body]] + (mebbe if mebbe else []))[::-1],
-            +orelse[2] if orelse else []
-        )[0]
-    }
-
-for_stmt: indent token=for_token target=set_multiple_targets in_token iter=tupled_expression body=colon_and_loop_body orelse=[indent else_token colon_and_body] {
-        ast.For(
-            token=token,
-            target=target,
-            iter=iter,
-            body=+body,
-            orelse=+orelse[2] if orelse else [],
-        )
-    }
-
-async_for_stmt: indent async_token token=for_token target=set_multiple_targets in_token iter=expression body=colon_and_loop_body orelse=[indent else_token colon_and_body] {
-        ast.AsyncFor(
-            token=token,
-            target=target,
-            iter=iter,
-            body=+body,
-            orelse=+orelse[2] if orelse else [],
-        ) if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error()
-    }
-
-while_stmt: indent token=while_token test=walrus_expression body=colon_and_loop_body orelse=[indent else_token colon_and_body] {
-        ast.While(
-            token=token,
-            test=test,
-            body=+body,
-            orelse=+orelse[2] if orelse else [],
-        )
-    }
-
-try_stmt: '' a=(try_group | try_except | try_finally) {
-    (
-        ast.TryStar if a[3] and len(a[3][0]) == 5 else ast.Try
-    )(
-        token=a[1],
-        body=+a[2],
-        handlers=[ast.ExceptHandler(token=a[1], type=handler[-2][0] if handler[-2] else None, name=+handler[-2][1][1] if handler[-2] and handler[-2][1] else None, body=+handler[-1]) for handler in a[3]],
-        orelse=+a[4][2] if a[4] else [],
-        finalbody=+a[5][2] if a[5] else [],
-    )
-}
-
-# try
-
-try_except: indent token=try_token body=colon_and_body handlers=except_colon+ orelse=[indent else_token colon_and_body] finalbody=[indent finally_token colon_and_body]
-try_group: indent token=try_token body=colon_and_body handlers=except_star+ orelse=[indent else_token colon_and_body] finalbody=[indent finally_token colon_and_body]
-try_finally: indent token=try_token body=colon_and_body handlers=(!'')* orelse=(!'')* finalbody=(indent finally_token colon_and_body)
-
-except_colon: indent q=except_token w=[expression [as_token identifier]] e=colon_and_body
-except_star: a=(indent except_token star_token [expression [as_token identifier]] colon_and_body) { a if a[2] else char_parser.to_char_parser(self)._error() }
-
-
-with_stmt_impl: #local
-    | token=with_token left_paren_token items=comma_token.(expression [as_token set_array_target])+ comma_token? right_paren_token body=colon_and_body { [token, items, body] }
-    | token=with_token items=comma_token.(expression [as_token set_array_target])+ body=colon_and_body
-
-with_stmt: indent a=with_stmt_impl {
-    ast.With(
-        token=a[0],
-        items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1] if item[1] else None) for item in a[1]],
-        body=+a[2],
-    )
-}
-
-async_with_stmt: indent async_token a=with_stmt_impl {
-    ast.AsyncWith(
-        token=a[0],
-        items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1] if item[1] else None) for item in a[1]],
-        body=+a[2],
-    ) if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error()
-}
-
-class_def: decorator_list=decorator_list indent token=class_token name=identifier type_params=[type_params] args=[left_paren_token call_args right_paren_token] body=colon_and_body {
-    ast.ClassDef(
-        token=token,
-        name=+name,
-        bases=args[1]['args'] if args else [],
-        keywords=args[1]['keywords'] if args else [],
-        body=+body,
-        decorator_list=+decorator_list,
-        type_params = +type_params if type_params else []
-    )
-}
-
-# functions
-
-parameter_with_colon: arg=identifier colon_token annotation=expression { ast.arg(token=arg, arg=+arg, annotation=annotation) if char_parser.to_char_parser(self)._args_level[-1] else None }
-parameter_without_colon: arg=identifier { ast.arg(token=arg, arg=+arg, annotation=None) }
-parameter:
-    | parameter_with_colon
-    | parameter_without_colon
-defparameter: arg=parameter default=[assign_token expression] { [arg, default[1] if default else None] }
-parameter_starstar: starstar_token kwarg=parameter [comma_token] { dict(kwarg=kwarg) }
-parameter_list_starargs   :
-    | others=parameter_starstar { dict(vararg=None, kwonlyargs=[], kw_defaults=[]) | others }
-    | star_token vararg=[parameter] kwonlyargs=(comma_token defparameter)* others=[comma_token [parameter_starstar]] {
-        (
-            others[1] if others and others[1] else dict(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
-        ) | dict(
-            vararg=vararg,
-            kwonlyargs=[q[1][0] for q in kwonlyargs] if kwonlyargs else [],
-            kw_defaults=[q[1][1] for q in kwonlyargs] if kwonlyargs else [],
-        )
-    }
-parameter_list_no_posonly :
-    | args=comma_token.defparameter+ others=[comma_token [parameter_list_starargs]] {
-        (
-            others[1] if others and others[1] else dict(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
-        ) | dict(
-            args=[arg[0] for arg in args],
-            defaults=[arg[1] for arg in args],
-        )
-    }
-    | others=parameter_list_starargs  { dict(args=[], defaults=[]) | others }
-parameter_list:
-    | posonlyargs=comma_token.defparameter+ comma_token slash_token others=[comma_token [parameter_list_no_posonly]] {
-        (
-            others[1] if others and others[1] else dict(posonlyargs=[],args=[],kwonlyargs=[],kw_defaults=[],defaults=[])
-        ) | dict(
-            posonlyargs=[arg[0] for arg in posonlyargs],
-            defaults=[arg[1] for arg in posonlyargs] + (others[1]['defaults'] if others and others[1] else []),
-        )
-    }
-    | others=parameter_list_no_posonly { dict(posonlyargs=[]) | others }
-parameter_list_preprocessed: args=parameter_list {
-    args | dict(defaults=[arg for arg in args['defaults'] if arg])
-        if not any([w is None and e is not None for q,w in enumerate(args['defaults']) for e in args['defaults'][:q]]) else
-    char_parser.to_char_parser(self)._error()
-}
-start_func_args: token=r'' {[token, char_parser.to_char_parser(self)._args_level.append(1)]}
-stop_func_args: token=r'' {[token, char_parser.to_char_parser(self)._args_level.pop()]}
-start_lmbd_args: token=r'' {[token, char_parser.to_char_parser(self)._args_level.append(0)]}
-stop_lmbd_args: token=r'' {[token, char_parser.to_char_parser(self)._args_level.pop()]}
-parameter_list_func: token=start_func_args args=parameter_list_preprocessed? stop_func_args {
-    ast.arguments(token=token[0], **args) if args else ast.arguments(token=token[0], posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])
-}
-parameter_list_lmbd: token=start_lmbd_args args=parameter_list_preprocessed? stop_lmbd_args {
-    ast.arguments(token=token[0], **args) if args else ast.arguments(token=token[0], posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])
-}
-decorator: indent decorator_token a=walrus_expression new_line { a }
-decorator_or_spaces:
-    | decorator
-    | spaces new_line { ... }
-decorator_list: a=decorator_or_spaces* { char_parser.to_char_parser(self)._make_true([q for q in a if q is not ...]) }
-
-func_signature: def_token=def_token name=identifier type_params=[type_params] left_paren_token args=parameter_list_func? right_paren_token returns=[returns_token expression] {
-    lambda decorator_list, a_token, body: (ast.AsyncFunctionDef if a_token else ast.FunctionDef)(
-        token=a_token if a_token else def_token,
-        decorator_list=+decorator_list,
-        name=+name,
-        type_params=+type_params if type_params else [],
-        args=args,
-        returns=returns[1] if returns else None,
-        body=+body,
-    )
-}
-
-func_def: decorator_list=decorator_list indent data=func_signature body=colon_and_func_body {
-    data(decorator_list, None, body)
-}
-
-coro_def: decorator_list=decorator_list indent a_token=async_token data=func_signature body=colon_and_coro_body {
-    data(decorator_list, a_token, body)
-}
-
-# targets
-
-set_single_target:
-    | left_paren_token target=set_single_target right_paren_token { [target[0], 0] }
-    | target=set_attributeref { [target, 0] }
-    | target=set_subscription { [target, 0] }
-    | target=set_name { [target, 1] }
-
-del_single_target: #local
-    | left_paren_token target=del_single_target right_paren_token { [target[0], 0] }
-    | target=del_attributeref { [target, 0] }
-    | target=del_subscription { [target, 0] }
-    | target=del_name { [target, 1] }
-
-set_array_target:
-    | target=set_single_target { target[0] }
-    | token=left_paren_token targets=[set_multiple_targets] right_paren_token { targets if targets else ast.Tuple(token=token, elts=[], ctx=ast.Store(token=token)) }
-    | token=left_bracket_token targets=[set_array_targets] right_bracket_token { ast.List(token=token, elts=targets[0] if targets else [], ctx=ast.Store(token=token)) }
-    | token=star_token value=set_array_target { None if isinstance(value, ast.Starred) else ast.Starred(token=token, value=value, ctx=ast.Store(token=token)) }
-
-del_array_target: #local
-    | target=del_single_target { target[0] }
-    | token=left_paren_token targets=[del_multiple_targets] right_paren_token { targets if targets else ast.Tuple(token=token, elts=[], ctx=ast.Del(token=token)) }
-    | token=left_bracket_token targets=[del_array_targets] right_bracket_token { ast.List(token=token, elts=targets[0] if targets else [], ctx=ast.Del(token=token)) }
-    | token=star_token value=del_array_target { None if isinstance(value, ast.Starred) else ast.Starred(token=token, value=value, ctx=ast.Del(token=token)) }
-
-set_array_targets: comma_token.set_array_target+ comma_token? #local
-
-del_array_targets: comma_token.del_array_target+ comma_token?
-
-set_multiple_targets: targets=set_array_targets { ast.Tuple(token=targets[0][0].token, elts=targets[0], ctx=ast.Store(token=targets[0][0].token)) if len(targets[0]) != 1 or targets[1] else targets[0][0] }
-
-del_multiple_targets: targets=del_array_targets { ast.Tuple(token=targets[0][0].token, elts=targets[0], ctx=ast.Del(token=targets[0][0].token)) if len(targets[0]) != 1 or targets[1] else targets[0][0] } #local
-
-# simple statements
-
-simple_stmt:
-    | assert_stmt
-    | pass_stmt
-    | del_stmt
-    | return_stmt
-    | raise_stmt
-    | break_stmt
-    | continue_stmt
-    | import_stmt
-    | global_stmt
-    | nonlocal_stmt
-    | type_stmt
-    | augmented_assignment_stmt
-    | annotated_assignment_stmt
-    | assignment_stmt
-    | expression_stmt
-
-expression_stmt: a=yield_expression { ast.Expr(token=a.token, value=a) }
-
-assignment_stmt: targets=(set_multiple_targets assign_token)+ value=yield_expression { ast.Assign(token=value.token, targets=[target[0] for target in targets], value=value) }
-
-augmented_assignment_stmt: target=set_single_target op=aug_token value=yield_expression { ast.AugAssign(token=op, target=target[0], op=char_parser.to_char_parser(self)._bin_op_to_ast[op()[:-1]](token=op), value=value) }
-
-annotated_assignment_stmt: target=set_single_target token=colon_token annotation=expression value=[assign_token yield_expression]  { ast.AnnAssign(token=token, target=target[0], annotation=annotation, value=value[1] if value else None, simple=target[1]) }
-
-assert_stmt: token=assert_token test=expression msg=[comma_token expression] { ast.Assert(token=token, test=test, msg=msg[1] if msg else None) }
-
-pass_stmt:  token=pass_token { ast.Pass(token=token) }
-
-del_stmt:  token=del_token targets=del_array_targets { ast.Delete(token=token, targets=targets[0]) }
-
-return_stmt:  token=return_token value=tupled_expression? { ast.Return(token=token, value=value) }
-
-raise_stmt:  token=raise_token exc=[expression [from_token expression]] { ast.Raise(token=token, exc=exc[0] if exc else None, cause=exc[1][1] if exc and exc[1] else None) }
-
-break_stmt:  token=break_token { ast.Break(token=token) }
-
-continue_stmt:  token=continue_token { ast.Continue(token=token) }
-
-module: #local
-    | dot_token+ &import_token [!import_token]
-    | dot_token* dot_token.identifier+
-
-import_stmt:
-    | token=import_token names=comma_token.(dot_token.identifier+ [as_token identifier])+ {
-        ast.Import(
-            token=token,
-            names=[
-                ast.alias(
-                    token=name[0][0],
-                    name='.'.join([+c for c in name[0]]),
-                    asname=+name[1][1] if name[1] else None
-                )
-            for name in names]
-        )
-    }
-    | token=from_token module=module import_token names=comma_token.(identifier [as_token identifier])+ {
-        ast.ImportFrom(
-            token=token,
-            module='.'.join([+c for c in module[1]]) if module[1] else None,
-            names=[ast.alias(token=token, name=+name[0], asname=+name[1][1] if name[1] else None) for name in names],
-            level=len(module[0])
-        )
-    }
-    | token=from_token module=module import_token left_paren_token names=comma_token.(identifier [as_token identifier])+ comma_token? right_paren_token {
-        ast.ImportFrom(
-            token=token,
-            module='.'.join([+c for c in module[1]]) if module[1] else None,
-            names=[ast.alias(token=token, name=+name[0], asname=+name[1][1] if name[1] else None) for name in names],
-            level=len(module[0])
-        )
-    }
-    | token=from_token module=module import_token star_token {
-        ast.ImportFrom(
-            token=token,
-            module='.'.join([+c for c in module[1]]) if module[1] else None,
-            names=[ast.alias(token=token, name='*')],
-            level=len(module[0])
-        ) if char_parser.to_char_parser(self)._func_level[-1] == 0 else char_parser.to_char_parser(self)._error()
-    }
-
-global_stmt: token=global_token names=comma_token.identifier+ { ast.Global(token=token, names=[+name for name in names]) }
-
-nonlocal_stmt: token=nonlocal_token names=comma_token.identifier+ { ast.Nonlocal(token=token, names=[+name for name in names]) }
-
-type_stmt: token=type_token name=set_name type_params=[type_params] assign_token value=expression {
-    ast.TypeAlias(
-        token=token,
-        name=name,
-        type_params=+type_params if type_params else [],
-        value=value,
-    )
-}
-
-type_params: left_bracket_token params=comma_token.type_param+ right_bracket_token { char_parser.to_char_parser(self)._make_true(params) } #local
-
-type_param: #local
-    | name=identifier colon_token bound=expression { ast.TypeVar(token=name, name=+name, bound=bound) }
-    | name=identifier { ast.TypeVar(token=name, name=+name) }
-    | star_token name=identifier { ast.TypeVarTuple(token=name, name=+name) }
-    | starstar_token name=identifier { ast.ParamSpec(token=name, name=+name) }
+m_expr: 
+    | left=u_expr right=(auto_generated_0__tmp_98)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+a_expr: 
+    | left=m_expr right=(auto_generated_0__tmp_99)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+shift_expr: 
+    | left=a_expr right=(auto_generated_0__tmp_100)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+and_expr: 
+    | left=shift_expr right=(auto_generated_0__tmp_101)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+xor_expr: 
+    | left=and_expr right=(auto_generated_0__tmp_102)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+or_expr: 
+    | left=xor_expr right=(auto_generated_0__tmp_103)* { (lambda left, right: char_parser.to_char_parser(self)._functools.reduce(lambda left, right: ast.BinOp(token=left.token, left=left, op=char_parser.to_char_parser(self)._bin_op_to_ast[+right[0]](token=right[0]), right=right[1]), right, left))(left, right) }
+
+ready_to_be_starred_expr: 
+    | or_expr=or_expr { (lambda or_expr: or_expr)(or_expr) }
+
+comp_operator: 
+    | op=comp_token { (lambda op: char_parser.to_char_parser(self)._bin_op_to_ast[+op](token=op))(op) }
+    | a=is_token s=(not_token)? { (lambda a, s: ast.IsNot(token=a) if s else ast.Is(token=a))(a, s) }
+    | s=(not_token)? a=in_token { (lambda s, a: ast.NotIn(token=a) if s else ast.In(token=a))(s, a) }
+
+comparison: 
+    | left=ready_to_be_starred_expr new_node=(auto_generated_0__tmp_104)* { (lambda left, new_node: ast.Compare(token=left.token, left=left, ops=[op for (op, comparator) in new_node], comparators=[comparator for (op, comparator) in new_node]) if new_node else left)(left, new_node) }
+
+not_test: 
+    | not_token operand=not_test { (lambda operand: ast.UnaryOp(token=operand.token, op=ast.Not(token=operand.token), operand=operand))(operand) }
+    | comparison=comparison { (lambda comparison: comparison)(comparison) }
+
+and_test: 
+    | left=not_test right=(auto_generated_0__tmp_105)* { (lambda left, right: ast.BoolOp(token=left.token, op=ast.And(token=left.token), values=[left] + [value[1] for value in right]) if right else left)(left, right) }
+
+or_test: 
+    | left=and_test right=(auto_generated_0__tmp_106)* { (lambda left, right: ast.BoolOp(token=left.token, op=ast.Or(token=left.token), values=[left] + [value[1] for value in right]) if right else left)(left, right) }
+
+ready_to_if_expr: 
+    | or_test=or_test { (lambda or_test: or_test)(or_test) }
+
+conditional_expression: 
+    | left=ready_to_if_expr new_node=(auto_generated_0__tmp_28)? { (lambda left, new_node: ast.IfExp(token=left.token, body=left, test=new_node[1], orelse=new_node[3]) if new_node else left)(left, new_node) }
+
+expression: 
+    | token=lambda_token args=parameter_list_lmbd colon_token body=expression { (lambda token, args, body: ast.Lambda(token=token, args=args, body=body))(token, args, body) }
+    | conditional_expression=conditional_expression { (lambda conditional_expression: conditional_expression)(conditional_expression) }
+
+tupled_expression_item: 
+    | expression=expression { (lambda expression: expression)(expression) }
+    | star_token value=ready_to_be_starred_expr { (lambda value: ast.Starred(token=value.token, value=value, ctx=ast.Load(token=value.token)))(value) }
+
+tupled_expression: 
+    | vs=auto_generated_0__gather_29 tc=(comma_token)? { (lambda vs, tc: vs[0] if len(vs) == 1 and (not tc) else ast.Tuple(token=vs[0].token, elts=vs, ctx=ast.Load(token=vs[0].token)))(vs, tc) }
+
+walrus_expression: 
+    | new_node=(auto_generated_0__tmp_31)? value=expression { (lambda new_node, value: ast.NamedExpr(token=value.token, target=new_node[0], value=value) if new_node else value)(new_node, value) }
+
+yield_expression: 
+    | token=yield_token from_token value=expression { (lambda token, value: ast.YieldFrom(token=token, value=value))(token, value) }
+    | token=yield_token value=(tupled_expression)? { (lambda token, value: ast.Yield(token=token, value=value))(token, value) }
+    | tupled_expression=tupled_expression { (lambda tupled_expression: tupled_expression)(tupled_expression) }
+
+f_expression: 
+    | yield_expression=yield_expression { (lambda yield_expression: yield_expression)(yield_expression) }
+    | conditional_expression=conditional_expression { (lambda conditional_expression: conditional_expression)(conditional_expression) }
+
+start_bracket: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._bracket_level.append(None)])() }
+
+stop_bracket: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._bracket_level.pop()])() }
+
+start_loop: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.append(1)])() }
+
+stop_loop: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.pop()])() }
+
+start_func: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.append(0), char_parser.to_char_parser(self)._func_level.append(1)])() }
+
+stop_func: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.pop(), char_parser.to_char_parser(self)._func_level.pop()])() }
+
+start_coro: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.append(0), char_parser.to_char_parser(self)._func_level.append(2)])() }
+
+stop_coro: 
+    | '' { (lambda : [char_parser.to_char_parser(self)._loop_level.pop(), char_parser.to_char_parser(self)._func_level.pop()])() }
+
+indent: 
+    | a=spaces_for_indent { (lambda a: [char_parser.to_char_parser(self)._indent_levels.__setitem__(-1, +a), a][1] if char_parser.to_char_parser(self)._indent_levels[-1] == None and a() != char_parser.to_char_parser(self)._indent_levels[-2] and a().startswith(char_parser.to_char_parser(self)._indent_levels[-2]) else [None, a][char_parser.to_char_parser(self)._indent_levels[-1] == +a])(a) }
+
+semicolon_separated_statements: 
+    | a=auto_generated_0__gather_32 (semicolon_token)? new_line { (lambda a: char_parser.to_char_parser(self)._make_true(a))(a) }
+
+line_content: 
+    | a=multiple_lines_statement { (lambda a: char_parser.to_char_parser(self)._make_true([a]))(a) }
+    | indent a=semicolon_separated_statements { (lambda a: a)(a) }
+
+line: 
+    | '$' { (lambda : None)() }
+    | spaces new_line { (lambda : char_parser.to_char_parser(self)._make_true([]))() }
+    | a=line_content { (lambda a: a)(a) }
+
+code_block: 
+    | 'append_indent\x00' a=auto_generated_0__loop1_34 'pop_indent\x00' { (lambda a: char_parser.to_char_parser(self)._make_true([d for s in a for d in +s]))(a) }
+
+body: 
+    | semicolon_separated_statements=semicolon_separated_statements { (lambda semicolon_separated_statements: semicolon_separated_statements)(semicolon_separated_statements) }
+    | new_line a=code_block { (lambda a: a if +a else None)(a) }
+
+colon_and_body: 
+    | colon_token a=body { (lambda a: a)(a) }
+
+colon_and_loop_body: 
+    | start_loop a=colon_and_body stop_loop { (lambda a: a)(a) }
+
+colon_and_func_body: 
+    | start_func a=colon_and_body stop_func { (lambda a: a)(a) }
+
+colon_and_coro_body: 
+    | start_coro a=colon_and_body stop_coro { (lambda a: a)(a) }
+
+start: 
+    | token='^' a=(line)* '$' { (lambda token, a: ast.Module(token=token, body=[d for s in a for d in +s], type_ignores=[]))(token, a) }
+
+multiple_lines_statement: 
+    | coro_def=coro_def { (lambda coro_def: coro_def)(coro_def) }
+    | func_def=func_def { (lambda func_def: func_def)(func_def) }
+    | async_for_stmt=async_for_stmt { (lambda async_for_stmt: async_for_stmt)(async_for_stmt) }
+    | for_stmt=for_stmt { (lambda for_stmt: for_stmt)(for_stmt) }
+    | while_stmt=while_stmt { (lambda while_stmt: while_stmt)(while_stmt) }
+    | if_stmt=if_stmt { (lambda if_stmt: if_stmt)(if_stmt) }
+    | try_stmt=try_stmt { (lambda try_stmt: try_stmt)(try_stmt) }
+    | with_stmt=with_stmt { (lambda with_stmt: with_stmt)(with_stmt) }
+    | async_with_stmt=async_with_stmt { (lambda async_with_stmt: async_with_stmt)(async_with_stmt) }
+    | class_def=class_def { (lambda class_def: class_def)(class_def) }
+
+if_stmt: 
+    | indent=indent token=if_token test=walrus_expression body=colon_and_body mebbe=(auto_generated_0__tmp_107)* orelse=(auto_generated_0__tmp_37)? { (lambda indent, token, test, body, mebbe, orelse: char_parser.to_char_parser(self)._functools.reduce(lambda a, s: [ast.If(token=s[1], test=s[2], body=+s[3], orelse=a)], ([[indent, token, test, body]] + (mebbe if mebbe else []))[::-1], +orelse[2] if orelse else [])[0])(indent, token, test, body, mebbe, orelse) }
+
+for_stmt: 
+    | indent token=for_token target=set_multiple_targets in_token iter=tupled_expression body=colon_and_loop_body orelse=(auto_generated_0__tmp_38)? { (lambda token, target, iter, body, orelse: ast.For(token=token, target=target, iter=iter, body=+body, orelse=+orelse[2] if orelse else []))(token, target, iter, body, orelse) }
+
+async_for_stmt: 
+    | indent async_token token=for_token target=set_multiple_targets in_token iter=expression body=colon_and_loop_body orelse=(auto_generated_0__tmp_39)? { (lambda token, target, iter, body, orelse: ast.AsyncFor(token=token, target=target, iter=iter, body=+body, orelse=+orelse[2] if orelse else []) if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error())(token, target, iter, body, orelse) }
+
+while_stmt: 
+    | indent token=while_token test=walrus_expression body=colon_and_loop_body orelse=(auto_generated_0__tmp_40)? { (lambda token, test, body, orelse: ast.While(token=token, test=test, body=+body, orelse=+orelse[2] if orelse else []))(token, test, body, orelse) }
+
+try_stmt: 
+    | '' a=auto_generated_0__tmp_41 { (lambda a: (ast.TryStar if a[3] and len(a[3][0]) == 5 else ast.Try)(token=a[1], body=+a[2], handlers=[ast.ExceptHandler(token=a[1], type=handler[-2][0] if handler[-2] else None, name=+handler[-2][1][1] if handler[-2] and handler[-2][1] else None, body=+handler[-1]) for handler in a[3]], orelse=+a[4][2] if a[4] else [], finalbody=+a[5][2] if a[5] else []))(a) }
+
+try_except: 
+    | indent=indent token=try_token body=colon_and_body handlers=auto_generated_0__loop1_42 orelse=(auto_generated_0__tmp_43)? finalbody=(auto_generated_0__tmp_44)? { (lambda indent, token, body, handlers, orelse, finalbody: [indent, token, body, handlers, orelse, finalbody])(indent, token, body, handlers, orelse, finalbody) }
+
+try_group: 
+    | indent=indent token=try_token body=colon_and_body handlers=auto_generated_0__loop1_45 orelse=(auto_generated_0__tmp_46)? finalbody=(auto_generated_0__tmp_47)? { (lambda indent, token, body, handlers, orelse, finalbody: [indent, token, body, handlers, orelse, finalbody])(indent, token, body, handlers, orelse, finalbody) }
+
+try_finally: 
+    | indent=indent token=try_token body=colon_and_body handlers=(!(''))* orelse=(!(''))* finalbody=auto_generated_0__tmp_50 { (lambda indent, token, body, handlers, orelse, finalbody: [indent, token, body, handlers, orelse, finalbody])(indent, token, body, handlers, orelse, finalbody) }
+
+except_colon: 
+    | indent=indent q=except_token w=(auto_generated_0__tmp_51)? e=colon_and_body { (lambda indent, q, w, e: [indent, q, w, e])(indent, q, w, e) }
+
+except_star: 
+    | indent=indent except_token=except_token star_token=star_token opt=(auto_generated_0__tmp_52)? colon_and_body=colon_and_body { (lambda indent, except_token, star_token, opt, colon_and_body: [indent, except_token, star_token, opt, colon_and_body])(indent, except_token, star_token, opt, colon_and_body) }
+
+with_stmt_impl: 
+    | token=with_token left_paren_token items=auto_generated_0__gather_53 (comma_token)? right_paren_token body=colon_and_body { (lambda token, items, body: [token, items, body])(token, items, body) }
+    | token=with_token items=auto_generated_0__gather_55 body=colon_and_body { (lambda token, items, body: [token, items, body])(token, items, body) }
+
+with_stmt: 
+    | indent a=with_stmt_impl { (lambda a: ast.With(token=a[0], items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1] if item[1] else None) for item in a[1]], body=+a[2]))(a) }
+
+async_with_stmt: 
+    | indent async_token a=with_stmt_impl { (lambda a: ast.AsyncWith(token=a[0], items=[ast.withitem(token=a[0], context_expr=item[0], optional_vars=item[1][1] if item[1] else None) for item in a[1]], body=+a[2]) if char_parser.to_char_parser(self)._func_level[-1] == 2 else char_parser.to_char_parser(self)._error())(a) }
+
+class_def: 
+    | decorator_list=decorator_list indent token=class_token name=identifier type_params=(type_params)? args=(auto_generated_0__tmp_57)? body=colon_and_body { (lambda decorator_list, token, name, type_params, args, body: ast.ClassDef(token=token, name=+name, bases=args[1]['args'] if args else [], keywords=args[1]['keywords'] if args else [], body=+body, decorator_list=+decorator_list, type_params=+type_params if type_params else []))(decorator_list, token, name, type_params, args, body) }
+
+parameter_with_colon: 
+    | arg=identifier colon_token annotation=expression { (lambda arg, annotation: ast.arg(token=arg, arg=+arg, annotation=annotation) if char_parser.to_char_parser(self)._args_level[-1] else None)(arg, annotation) }
+
+parameter_without_colon: 
+    | arg=identifier { (lambda arg: ast.arg(token=arg, arg=+arg, annotation=None))(arg) }
+
+parameter: 
+    | parameter_with_colon=parameter_with_colon { (lambda parameter_with_colon: parameter_with_colon)(parameter_with_colon) }
+    | parameter_without_colon=parameter_without_colon { (lambda parameter_without_colon: parameter_without_colon)(parameter_without_colon) }
+
+defparameter: 
+    | arg=parameter default=(auto_generated_0__tmp_58)? { (lambda arg, default: [arg, default[1] if default else None])(arg, default) }
+
+parameter_starstar: 
+    | starstar_token kwarg=parameter (comma_token)? { (lambda kwarg: dict(kwarg=kwarg))(kwarg) }
+
+parameter_list_starargs: 
+    | others=parameter_starstar { (lambda others: dict(vararg=None, kwonlyargs=[], kw_defaults=[]) | others)(others) }
+    | star_token vararg=(parameter)? kwonlyargs=(auto_generated_0__tmp_112)* others=(auto_generated_0__tmp_60)? { (lambda vararg, kwonlyargs, others: (others[1] if others and others[1] else dict(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])) | dict(vararg=vararg, kwonlyargs=[q[1][0] for q in kwonlyargs] if kwonlyargs else [], kw_defaults=[q[1][1] for q in kwonlyargs] if kwonlyargs else []))(vararg, kwonlyargs, others) }
+
+parameter_list_no_posonly: 
+    | args=auto_generated_0__gather_61 others=(auto_generated_0__tmp_63)? { (lambda args, others: (others[1] if others and others[1] else dict(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])) | dict(args=[arg[0] for arg in args], defaults=[arg[1] for arg in args]))(args, others) }
+    | others=parameter_list_starargs { (lambda others: dict(args=[], defaults=[]) | others)(others) }
+
+parameter_list: 
+    | posonlyargs=auto_generated_0__gather_64 comma_token slash_token others=(auto_generated_0__tmp_66)? { (lambda posonlyargs, others: (others[1] if others and others[1] else dict(posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[])) | dict(posonlyargs=[arg[0] for arg in posonlyargs], defaults=[arg[1] for arg in posonlyargs] + (others[1]['defaults'] if others and others[1] else [])))(posonlyargs, others) }
+    | others=parameter_list_no_posonly { (lambda others: dict(posonlyargs=[]) | others)(others) }
+
+parameter_list_preprocessed: 
+    | args=parameter_list { (lambda args: args | dict(defaults=[arg for arg in args['defaults'] if arg]) if not any([w is None and e is not None for (q, w) in enumerate(args['defaults']) for e in args['defaults'][:q]]) else char_parser.to_char_parser(self)._error())(args) }
+
+start_func_args: 
+    | token='' { (lambda token: [token, char_parser.to_char_parser(self)._args_level.append(1)])(token) }
+
+stop_func_args: 
+    | token='' { (lambda token: [token, char_parser.to_char_parser(self)._args_level.pop()])(token) }
+
+start_lmbd_args: 
+    | token='' { (lambda token: [token, char_parser.to_char_parser(self)._args_level.append(0)])(token) }
+
+stop_lmbd_args: 
+    | token='' { (lambda token: [token, char_parser.to_char_parser(self)._args_level.pop()])(token) }
+
+parameter_list_func: 
+    | token=start_func_args args=(parameter_list_preprocessed)? stop_func_args { (lambda token, args: ast.arguments(token=token[0], **args) if args else ast.arguments(token=token[0], posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[]))(token, args) }
+
+parameter_list_lmbd: 
+    | token=start_lmbd_args args=(parameter_list_preprocessed)? stop_lmbd_args { (lambda token, args: ast.arguments(token=token[0], **args) if args else ast.arguments(token=token[0], posonlyargs=[], args=[], kwonlyargs=[], kw_defaults=[], defaults=[]))(token, args) }
+
+decorator: 
+    | indent decorator_token a=walrus_expression new_line { (lambda a: a)(a) }
+
+decorator_or_spaces: 
+    | decorator=decorator { (lambda decorator: decorator)(decorator) }
+    | spaces new_line { (lambda : ...)() }
+
+decorator_list: 
+    | a=(decorator_or_spaces)* { (lambda a: char_parser.to_char_parser(self)._make_true([q for q in a if q is not ...]))(a) }
+
+func_signature: 
+    | def_token=def_token name=identifier type_params=(type_params)? left_paren_token args=(parameter_list_func)? right_paren_token returns=(auto_generated_0__tmp_68)? { (lambda def_token, name, type_params, args, returns: lambda decorator_list, a_token, body: (ast.AsyncFunctionDef if a_token else ast.FunctionDef)(token=a_token if a_token else def_token, decorator_list=+decorator_list, name=+name, type_params=+type_params if type_params else [], args=args, returns=returns[1] if returns else None, body=+body))(def_token, name, type_params, args, returns) }
+
+func_def: 
+    | decorator_list=decorator_list indent data=func_signature body=colon_and_func_body { (lambda decorator_list, data, body: data(decorator_list, None, body))(decorator_list, data, body) }
+
+coro_def: 
+    | decorator_list=decorator_list indent a_token=async_token data=func_signature body=colon_and_coro_body { (lambda decorator_list, a_token, data, body: data(decorator_list, a_token, body))(decorator_list, a_token, data, body) }
+
+set_single_target: 
+    | left_paren_token target=set_single_target right_paren_token { (lambda target: [target[0], 0])(target) }
+    | target=set_attributeref { (lambda target: [target, 0])(target) }
+    | target=set_subscription { (lambda target: [target, 0])(target) }
+    | target=set_name { (lambda target: [target, 1])(target) }
+
+del_single_target: 
+    | left_paren_token target=del_single_target right_paren_token { (lambda target: [target[0], 0])(target) }
+    | target=del_attributeref { (lambda target: [target, 0])(target) }
+    | target=del_subscription { (lambda target: [target, 0])(target) }
+    | target=del_name { (lambda target: [target, 1])(target) }
+
+set_array_target: 
+    | target=set_single_target { (lambda target: target[0])(target) }
+    | token=left_paren_token targets=(set_multiple_targets)? right_paren_token { (lambda token, targets: targets if targets else ast.Tuple(token=token, elts=[], ctx=ast.Store(token=token)))(token, targets) }
+    | token=left_bracket_token targets=(set_array_targets)? right_bracket_token { (lambda token, targets: ast.List(token=token, elts=targets[0] if targets else [], ctx=ast.Store(token=token)))(token, targets) }
+    | token=star_token value=set_array_target { (lambda token, value: None if isinstance(value, ast.Starred) else ast.Starred(token=token, value=value, ctx=ast.Store(token=token)))(token, value) }
+
+del_array_target: 
+    | target=del_single_target { (lambda target: target[0])(target) }
+    | token=left_paren_token targets=(del_multiple_targets)? right_paren_token { (lambda token, targets: targets if targets else ast.Tuple(token=token, elts=[], ctx=ast.Del(token=token)))(token, targets) }
+    | token=left_bracket_token targets=(del_array_targets)? right_bracket_token { (lambda token, targets: ast.List(token=token, elts=targets[0] if targets else [], ctx=ast.Del(token=token)))(token, targets) }
+    | token=star_token value=del_array_target { (lambda token, value: None if isinstance(value, ast.Starred) else ast.Starred(token=token, value=value, ctx=ast.Del(token=token)))(token, value) }
+
+set_array_targets: 
+    | auto_generated_0__gather_69=auto_generated_0__gather_69 opt=(comma_token)? { (lambda _gather_69, opt: [_gather_69, opt])(auto_generated_0__gather_69, opt) }
+
+del_array_targets: 
+    | auto_generated_0__gather_71=auto_generated_0__gather_71 opt=(comma_token)? { (lambda _gather_71, opt: [_gather_71, opt])(auto_generated_0__gather_71, opt) }
+
+set_multiple_targets: 
+    | targets=set_array_targets { (lambda targets: ast.Tuple(token=targets[0][0].token, elts=targets[0], ctx=ast.Store(token=targets[0][0].token)) if len(targets[0]) != 1 or targets[1] else targets[0][0])(targets) }
+
+del_multiple_targets: 
+    | targets=del_array_targets { (lambda targets: ast.Tuple(token=targets[0][0].token, elts=targets[0], ctx=ast.Del(token=targets[0][0].token)) if len(targets[0]) != 1 or targets[1] else targets[0][0])(targets) }
+
+simple_stmt: 
+    | assert_stmt=assert_stmt { (lambda assert_stmt: assert_stmt)(assert_stmt) }
+    | pass_stmt=pass_stmt { (lambda pass_stmt: pass_stmt)(pass_stmt) }
+    | del_stmt=del_stmt { (lambda del_stmt: del_stmt)(del_stmt) }
+    | return_stmt=return_stmt { (lambda return_stmt: return_stmt)(return_stmt) }
+    | raise_stmt=raise_stmt { (lambda raise_stmt: raise_stmt)(raise_stmt) }
+    | break_stmt=break_stmt { (lambda break_stmt: break_stmt)(break_stmt) }
+    | continue_stmt=continue_stmt { (lambda continue_stmt: continue_stmt)(continue_stmt) }
+    | import_stmt=import_stmt { (lambda import_stmt: import_stmt)(import_stmt) }
+    | global_stmt=global_stmt { (lambda global_stmt: global_stmt)(global_stmt) }
+    | nonlocal_stmt=nonlocal_stmt { (lambda nonlocal_stmt: nonlocal_stmt)(nonlocal_stmt) }
+    | type_stmt=type_stmt { (lambda type_stmt: type_stmt)(type_stmt) }
+    | augmented_assignment_stmt=augmented_assignment_stmt { (lambda augmented_assignment_stmt: augmented_assignment_stmt)(augmented_assignment_stmt) }
+    | annotated_assignment_stmt=annotated_assignment_stmt { (lambda annotated_assignment_stmt: annotated_assignment_stmt)(annotated_assignment_stmt) }
+    | assignment_stmt=assignment_stmt { (lambda assignment_stmt: assignment_stmt)(assignment_stmt) }
+    | expression_stmt=expression_stmt { (lambda expression_stmt: expression_stmt)(expression_stmt) }
+
+expression_stmt: 
+    | a=yield_expression { (lambda a: ast.Expr(token=a.token, value=a))(a) }
+
+assignment_stmt: 
+    | targets=auto_generated_0__loop1_73 value=yield_expression { (lambda targets, value: ast.Assign(token=value.token, targets=[target[0] for target in targets], value=value))(targets, value) }
+
+augmented_assignment_stmt: 
+    | target=set_single_target op=aug_token value=yield_expression { (lambda target, op, value: ast.AugAssign(token=op, target=target[0], op=char_parser.to_char_parser(self)._bin_op_to_ast[op()[:-1]](token=op), value=value))(target, op, value) }
+
+annotated_assignment_stmt: 
+    | target=set_single_target token=colon_token annotation=expression value=(auto_generated_0__tmp_74)? { (lambda target, token, annotation, value: ast.AnnAssign(token=token, target=target[0], annotation=annotation, value=value[1] if value else None, simple=target[1]))(target, token, annotation, value) }
+
+assert_stmt: 
+    | token=assert_token test=expression msg=(auto_generated_0__tmp_75)? { (lambda token, test, msg: ast.Assert(token=token, test=test, msg=msg[1] if msg else None))(token, test, msg) }
+
+pass_stmt: 
+    | token=pass_token { (lambda token: ast.Pass(token=token))(token) }
+
+del_stmt: 
+    | token=del_token targets=del_array_targets { (lambda token, targets: ast.Delete(token=token, targets=targets[0]))(token, targets) }
+
+return_stmt: 
+    | token=return_token value=(tupled_expression)? { (lambda token, value: ast.Return(token=token, value=value))(token, value) }
+
+raise_stmt: 
+    | token=raise_token exc=(auto_generated_0__tmp_76)? { (lambda token, exc: ast.Raise(token=token, exc=exc[0] if exc else None, cause=exc[1][1] if exc and exc[1] else None))(token, exc) }
+
+break_stmt: 
+    | token=break_token { (lambda token: ast.Break(token=token))(token) }
+
+continue_stmt: 
+    | token=continue_token { (lambda token: ast.Continue(token=token))(token) }
+
+module: 
+    | auto_generated_0__loop1_77=auto_generated_0__loop1_77 &(import_token) opt=(!(import_token))? { (lambda _loop1_77, opt: [_loop1_77, opt])(auto_generated_0__loop1_77, opt) }
+    | auto_generated_0__loop0_78=(dot_token)* auto_generated_0__gather_79=auto_generated_0__gather_79 { (lambda _loop0_78, _gather_79: [_loop0_78, _gather_79])(auto_generated_0__loop0_78, auto_generated_0__gather_79) }
+
+import_stmt: 
+    | token=import_token names=auto_generated_0__gather_81 { (lambda token, names: ast.Import(token=token, names=[ast.alias(token=name[0][0], name='.'.join([+c for c in name[0]]), asname=+name[1][1] if name[1] else None) for name in names]))(token, names) }
+    | token=from_token module=module import_token names=auto_generated_0__gather_83 { (lambda token, module, names: ast.ImportFrom(token=token, module='.'.join([+c for c in module[1]]) if module[1] else None, names=[ast.alias(token=token, name=+name[0], asname=+name[1][1] if name[1] else None) for name in names], level=len(module[0])))(token, module, names) }
+    | token=from_token module=module import_token left_paren_token names=auto_generated_0__gather_85 (comma_token)? right_paren_token { (lambda token, module, names: ast.ImportFrom(token=token, module='.'.join([+c for c in module[1]]) if module[1] else None, names=[ast.alias(token=token, name=+name[0], asname=+name[1][1] if name[1] else None) for name in names], level=len(module[0])))(token, module, names) }
+    | token=from_token module=module import_token star_token { (lambda token, module: ast.ImportFrom(token=token, module='.'.join([+c for c in module[1]]) if module[1] else None, names=[ast.alias(token=token, name='*')], level=len(module[0])) if char_parser.to_char_parser(self)._func_level[-1] == 0 else char_parser.to_char_parser(self)._error())(token, module) }
+
+global_stmt: 
+    | token=global_token names=auto_generated_0__gather_87 { (lambda token, names: ast.Global(token=token, names=[+name for name in names]))(token, names) }
+
+nonlocal_stmt: 
+    | token=nonlocal_token names=auto_generated_0__gather_89 { (lambda token, names: ast.Nonlocal(token=token, names=[+name for name in names]))(token, names) }
+
+type_stmt: 
+    | token=type_token name=set_name type_params=(type_params)? assign_token value=expression { (lambda token, name, type_params, value: ast.TypeAlias(token=token, name=name, type_params=+type_params if type_params else [], value=value))(token, name, type_params, value) }
+
+type_params: 
+    | left_bracket_token params=auto_generated_0__gather_91 right_bracket_token { (lambda params: char_parser.to_char_parser(self)._make_true(params))(params) }
+
+type_param: 
+    | name=identifier colon_token bound=expression { (lambda name, bound: ast.TypeVar(token=name, name=+name, bound=bound))(name, bound) }
+    | name=identifier { (lambda name: ast.TypeVar(token=name, name=+name))(name) }
+    | star_token name=identifier { (lambda name: ast.TypeVarTuple(token=name, name=+name))(name) }
+    | starstar_token name=identifier { (lambda name: ast.ParamSpec(token=name, name=+name))(name) }
+
+auto_generated_0__loop0_2: (auto_generated_0__tmp_93 elem=spaces_not_in_brackets)*
+
+auto_generated_0__gather_1: 
+    | (auto_generated_0__tmp_93).(spaces_not_in_brackets)+
+
+auto_generated_0__tmp_3: 
+    | literal=':' literal_1='append_str\x00f' start_stre_b=start_stre_b str_end=str_end literal_2='pop_str\x00f' { (lambda literal, literal_1, start_stre_b, str_end, literal_2: [literal, literal_1, start_stre_b, str_end, literal_2])(literal, literal_1, start_stre_b, str_end, literal_2) }
+    | literal='\\}' { (lambda literal: literal)(literal) }
+
+auto_generated_0__loop1_4: (auto_generated_0__tmp_94=auto_generated_0__tmp_94)*
+
+auto_generated_0__tmp_5: 
+    | pointfloat=pointfloat { (lambda pointfloat: pointfloat)(pointfloat) }
+    | digitpart=digitpart { (lambda digitpart: digitpart)(digitpart) }
+
+auto_generated_0__tmp_6: 
+    | floatnumber=floatnumber { (lambda floatnumber: floatnumber)(floatnumber) }
+    | digitpart=digitpart { (lambda digitpart: digitpart)(digitpart) }
+
+auto_generated_0__tmp_7: 
+    | colon_token=colon_token opt=(expression)? { (lambda colon_token, opt: [colon_token, opt])(colon_token, opt) }
+
+auto_generated_0__loop0_9: (comma_token elem=sub_item)*
+
+auto_generated_0__gather_8: 
+    | (comma_token).(sub_item)+
+
+auto_generated_0__loop1_10: (auto_generated_0__tmp_95=auto_generated_0__tmp_95)*
+
+auto_generated_0__loop0_12: (comma_token elem=display_item)*
+
+auto_generated_0__gather_11: 
+    | (comma_token).(display_item)+
+
+auto_generated_0__loop0_14: (comma_token elem=dict_display_item)*
+
+auto_generated_0__gather_13: 
+    | (comma_token).(dict_display_item)+
+
+auto_generated_0__tmp_15: 
+    | auto_generated_0__gather_96=auto_generated_0__gather_96 opt=(comma_token)? { (lambda _gather_96, opt: [_gather_96, opt])(auto_generated_0__gather_96, opt) }
+
+auto_generated_0__tmp_16: 
+    | walrus_expression=walrus_expression comp_for=comp_for { (lambda walrus_expression, comp_for: [walrus_expression, comp_for])(walrus_expression, comp_for) }
+    | call_args=call_args { (lambda call_args: call_args)(call_args) }
+
+auto_generated_0__loop0_17: (suffix=suffix)*
+
+auto_generated_0__tmp_18: 
+    | starstar_token=starstar_token u_expr=u_expr { (lambda starstar_token, u_expr: [starstar_token, u_expr])(starstar_token, u_expr) }
+
+auto_generated_0__loop0_19: (auto_generated_0__tmp_98=auto_generated_0__tmp_98)*
+
+auto_generated_0__loop0_20: (auto_generated_0__tmp_99=auto_generated_0__tmp_99)*
+
+auto_generated_0__loop0_21: (auto_generated_0__tmp_100=auto_generated_0__tmp_100)*
+
+auto_generated_0__loop0_22: (auto_generated_0__tmp_101=auto_generated_0__tmp_101)*
+
+auto_generated_0__loop0_23: (auto_generated_0__tmp_102=auto_generated_0__tmp_102)*
+
+auto_generated_0__loop0_24: (auto_generated_0__tmp_103=auto_generated_0__tmp_103)*
+
+auto_generated_0__loop0_25: (auto_generated_0__tmp_104=auto_generated_0__tmp_104)*
+
+auto_generated_0__loop0_26: (auto_generated_0__tmp_105=auto_generated_0__tmp_105)*
+
+auto_generated_0__loop0_27: (auto_generated_0__tmp_106=auto_generated_0__tmp_106)*
+
+auto_generated_0__tmp_28: 
+    | if_token=if_token ready_to_if_expr=ready_to_if_expr else_token=else_token expression=expression { (lambda if_token, ready_to_if_expr, else_token, expression: [if_token, ready_to_if_expr, else_token, expression])(if_token, ready_to_if_expr, else_token, expression) }
+
+auto_generated_0__loop0_30: (comma_token elem=tupled_expression_item)*
+
+auto_generated_0__gather_29: 
+    | (comma_token).(tupled_expression_item)+
+
+auto_generated_0__tmp_31: 
+    | set_name=set_name walrus_token=walrus_token { (lambda set_name, walrus_token: [set_name, walrus_token])(set_name, walrus_token) }
+
+auto_generated_0__loop0_33: (semicolon_token elem=simple_stmt)*
+
+auto_generated_0__gather_32: 
+    | (semicolon_token).(simple_stmt)+
+
+auto_generated_0__loop1_34: (line=line)*
+
+auto_generated_0__loop0_35: (line=line)*
+
+auto_generated_0__loop0_36: (auto_generated_0__tmp_107=auto_generated_0__tmp_107)*
+
+auto_generated_0__tmp_37: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_38: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_39: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_40: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_41: 
+    | try_group=try_group { (lambda try_group: try_group)(try_group) }
+    | try_except=try_except { (lambda try_except: try_except)(try_except) }
+    | try_finally=try_finally { (lambda try_finally: try_finally)(try_finally) }
+
+auto_generated_0__loop1_42: (except_colon=except_colon)*
+
+auto_generated_0__tmp_43: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_44: 
+    | indent=indent finally_token=finally_token colon_and_body=colon_and_body { (lambda indent, finally_token, colon_and_body: [indent, finally_token, colon_and_body])(indent, finally_token, colon_and_body) }
+
+auto_generated_0__loop1_45: (except_star=except_star)*
+
+auto_generated_0__tmp_46: 
+    | indent=indent else_token=else_token colon_and_body=colon_and_body { (lambda indent, else_token, colon_and_body: [indent, else_token, colon_and_body])(indent, else_token, colon_and_body) }
+
+auto_generated_0__tmp_47: 
+    | indent=indent finally_token=finally_token colon_and_body=colon_and_body { (lambda indent, finally_token, colon_and_body: [indent, finally_token, colon_and_body])(indent, finally_token, colon_and_body) }
+
+auto_generated_0__loop0_48: (!(''))*
+
+auto_generated_0__loop0_49: (!(''))*
+
+auto_generated_0__tmp_50: 
+    | indent=indent finally_token=finally_token colon_and_body=colon_and_body { (lambda indent, finally_token, colon_and_body: [indent, finally_token, colon_and_body])(indent, finally_token, colon_and_body) }
+
+auto_generated_0__tmp_51: 
+    | expression=expression opt=(auto_generated_0__tmp_108)? { (lambda expression, opt: [expression, opt])(expression, opt) }
+
+auto_generated_0__tmp_52: 
+    | expression=expression opt=(auto_generated_0__tmp_109)? { (lambda expression, opt: [expression, opt])(expression, opt) }
+
+auto_generated_0__loop0_54: (comma_token elem=auto_generated_0__tmp_110)*
+
+auto_generated_0__gather_53: 
+    | (comma_token).(auto_generated_0__tmp_110)+
+
+auto_generated_0__loop0_56: (comma_token elem=auto_generated_0__tmp_111)*
+
+auto_generated_0__gather_55: 
+    | (comma_token).(auto_generated_0__tmp_111)+
+
+auto_generated_0__tmp_57: 
+    | left_paren_token=left_paren_token call_args=call_args right_paren_token=right_paren_token { (lambda left_paren_token, call_args, right_paren_token: [left_paren_token, call_args, right_paren_token])(left_paren_token, call_args, right_paren_token) }
+
+auto_generated_0__tmp_58: 
+    | assign_token=assign_token expression=expression { (lambda assign_token, expression: [assign_token, expression])(assign_token, expression) }
+
+auto_generated_0__loop0_59: (auto_generated_0__tmp_112=auto_generated_0__tmp_112)*
+
+auto_generated_0__tmp_60: 
+    | comma_token=comma_token opt=(parameter_starstar)? { (lambda comma_token, opt: [comma_token, opt])(comma_token, opt) }
+
+auto_generated_0__loop0_62: (comma_token elem=defparameter)*
+
+auto_generated_0__gather_61: 
+    | (comma_token).(defparameter)+
+
+auto_generated_0__tmp_63: 
+    | comma_token=comma_token opt=(parameter_list_starargs)? { (lambda comma_token, opt: [comma_token, opt])(comma_token, opt) }
+
+auto_generated_0__loop0_65: (comma_token elem=defparameter)*
+
+auto_generated_0__gather_64: 
+    | (comma_token).(defparameter)+
+
+auto_generated_0__tmp_66: 
+    | comma_token=comma_token opt=(parameter_list_no_posonly)? { (lambda comma_token, opt: [comma_token, opt])(comma_token, opt) }
+
+auto_generated_0__loop0_67: (decorator_or_spaces=decorator_or_spaces)*
+
+auto_generated_0__tmp_68: 
+    | returns_token=returns_token expression=expression { (lambda returns_token, expression: [returns_token, expression])(returns_token, expression) }
+
+auto_generated_0__loop0_70: (comma_token elem=set_array_target)*
+
+auto_generated_0__gather_69: 
+    | (comma_token).(set_array_target)+
+
+auto_generated_0__loop0_72: (comma_token elem=del_array_target)*
+
+auto_generated_0__gather_71: 
+    | (comma_token).(del_array_target)+
+
+auto_generated_0__loop1_73: (auto_generated_0__tmp_113=auto_generated_0__tmp_113)*
+
+auto_generated_0__tmp_74: 
+    | assign_token=assign_token yield_expression=yield_expression { (lambda assign_token, yield_expression: [assign_token, yield_expression])(assign_token, yield_expression) }
+
+auto_generated_0__tmp_75: 
+    | comma_token=comma_token expression=expression { (lambda comma_token, expression: [comma_token, expression])(comma_token, expression) }
+
+auto_generated_0__tmp_76: 
+    | expression=expression opt=(auto_generated_0__tmp_114)? { (lambda expression, opt: [expression, opt])(expression, opt) }
+
+auto_generated_0__loop1_77: (dot_token=dot_token)*
+
+auto_generated_0__loop0_78: (dot_token=dot_token)*
+
+auto_generated_0__loop0_80: (dot_token elem=identifier)*
+
+auto_generated_0__gather_79: 
+    | (dot_token).(identifier)+
+
+auto_generated_0__loop0_82: (comma_token elem=auto_generated_0__tmp_115)*
+
+auto_generated_0__gather_81: 
+    | (comma_token).(auto_generated_0__tmp_115)+
+
+auto_generated_0__loop0_84: (comma_token elem=auto_generated_0__tmp_116)*
+
+auto_generated_0__gather_83: 
+    | (comma_token).(auto_generated_0__tmp_116)+
+
+auto_generated_0__loop0_86: (comma_token elem=auto_generated_0__tmp_117)*
+
+auto_generated_0__gather_85: 
+    | (comma_token).(auto_generated_0__tmp_117)+
+
+auto_generated_0__loop0_88: (comma_token elem=identifier)*
+
+auto_generated_0__gather_87: 
+    | (comma_token).(identifier)+
+
+auto_generated_0__loop0_90: (comma_token elem=identifier)*
+
+auto_generated_0__gather_89: 
+    | (comma_token).(identifier)+
+
+auto_generated_0__loop0_92: (comma_token elem=type_param)*
+
+auto_generated_0__gather_91: 
+    | (comma_token).(type_param)+
+
+auto_generated_0__tmp_93: 
+    | !('$') new_line=new_line { (lambda new_line: new_line)(new_line) }
+
+auto_generated_0__tmp_94: 
+    | str_with_prefix=str_with_prefix spaces=spaces { (lambda str_with_prefix, spaces: [str_with_prefix, spaces])(str_with_prefix, spaces) }
+
+auto_generated_0__tmp_95: 
+    | opt=(async_token)? for_token=for_token set_multiple_targets=set_multiple_targets in_token=in_token ready_to_if_expr=ready_to_if_expr auto_generated_0__loop0_118=(auto_generated_0__tmp_126)* { (lambda opt, for_token, set_multiple_targets, in_token, ready_to_if_expr, _loop0_118: [opt, for_token, set_multiple_targets, in_token, ready_to_if_expr, _loop0_118])(opt, for_token, set_multiple_targets, in_token, ready_to_if_expr, auto_generated_0__loop0_118) }
+
+auto_generated_0__loop0_97: (comma_token elem=call_arg)*
+
+auto_generated_0__gather_96: 
+    | (comma_token).(call_arg)+
+
+auto_generated_0__tmp_98: 
+    | m_token=m_token u_expr=u_expr { (lambda m_token, u_expr: [m_token, u_expr])(m_token, u_expr) }
+
+auto_generated_0__tmp_99: 
+    | a_token=a_token m_expr=m_expr { (lambda a_token, m_expr: [a_token, m_expr])(a_token, m_expr) }
+
+auto_generated_0__tmp_100: 
+    | shift_token=shift_token a_expr=a_expr { (lambda shift_token, a_expr: [shift_token, a_expr])(shift_token, a_expr) }
+
+auto_generated_0__tmp_101: 
+    | bit_and_token=bit_and_token shift_expr=shift_expr { (lambda bit_and_token, shift_expr: [bit_and_token, shift_expr])(bit_and_token, shift_expr) }
+
+auto_generated_0__tmp_102: 
+    | bit_xor_token=bit_xor_token and_expr=and_expr { (lambda bit_xor_token, and_expr: [bit_xor_token, and_expr])(bit_xor_token, and_expr) }
+
+auto_generated_0__tmp_103: 
+    | bit_or_token=bit_or_token xor_expr=xor_expr { (lambda bit_or_token, xor_expr: [bit_or_token, xor_expr])(bit_or_token, xor_expr) }
+
+auto_generated_0__tmp_104: 
+    | comp_operator=comp_operator ready_to_be_starred_expr=ready_to_be_starred_expr { (lambda comp_operator, ready_to_be_starred_expr: [comp_operator, ready_to_be_starred_expr])(comp_operator, ready_to_be_starred_expr) }
+
+auto_generated_0__tmp_105: 
+    | and_token=and_token not_test=not_test { (lambda and_token, not_test: [and_token, not_test])(and_token, not_test) }
+
+auto_generated_0__tmp_106: 
+    | or_token=or_token and_test=and_test { (lambda or_token, and_test: [or_token, and_test])(or_token, and_test) }
+
+auto_generated_0__tmp_107: 
+    | indent=indent elif_token=elif_token walrus_expression=walrus_expression colon_and_body=colon_and_body { (lambda indent, elif_token, walrus_expression, colon_and_body: [indent, elif_token, walrus_expression, colon_and_body])(indent, elif_token, walrus_expression, colon_and_body) }
+
+auto_generated_0__tmp_108: 
+    | as_token=as_token identifier=identifier { (lambda as_token, identifier: [as_token, identifier])(as_token, identifier) }
+
+auto_generated_0__tmp_109: 
+    | as_token=as_token identifier=identifier { (lambda as_token, identifier: [as_token, identifier])(as_token, identifier) }
+
+auto_generated_0__tmp_110: 
+    | expression=expression opt=(auto_generated_0__tmp_119)? { (lambda expression, opt: [expression, opt])(expression, opt) }
+
+auto_generated_0__tmp_111: 
+    | expression=expression opt=(auto_generated_0__tmp_120)? { (lambda expression, opt: [expression, opt])(expression, opt) }
+
+auto_generated_0__tmp_112: 
+    | comma_token=comma_token defparameter=defparameter { (lambda comma_token, defparameter: [comma_token, defparameter])(comma_token, defparameter) }
+
+auto_generated_0__tmp_113: 
+    | set_multiple_targets=set_multiple_targets assign_token=assign_token { (lambda set_multiple_targets, assign_token: [set_multiple_targets, assign_token])(set_multiple_targets, assign_token) }
+
+auto_generated_0__tmp_114: 
+    | from_token=from_token expression=expression { (lambda from_token, expression: [from_token, expression])(from_token, expression) }
+
+auto_generated_0__tmp_115: 
+    | auto_generated_0__gather_121=auto_generated_0__gather_121 opt=(auto_generated_0__tmp_123)? { (lambda _gather_121, opt: [_gather_121, opt])(auto_generated_0__gather_121, opt) }
+
+auto_generated_0__tmp_116: 
+    | identifier=identifier opt=(auto_generated_0__tmp_124)? { (lambda identifier, opt: [identifier, opt])(identifier, opt) }
+
+auto_generated_0__tmp_117: 
+    | identifier=identifier opt=(auto_generated_0__tmp_125)? { (lambda identifier, opt: [identifier, opt])(identifier, opt) }
+
+auto_generated_0__loop0_118: (auto_generated_0__tmp_126=auto_generated_0__tmp_126)*
+
+auto_generated_0__tmp_119: 
+    | as_token=as_token set_array_target=set_array_target { (lambda as_token, set_array_target: [as_token, set_array_target])(as_token, set_array_target) }
+
+auto_generated_0__tmp_120: 
+    | as_token=as_token set_array_target=set_array_target { (lambda as_token, set_array_target: [as_token, set_array_target])(as_token, set_array_target) }
+
+auto_generated_0__loop0_122: (dot_token elem=identifier)*
+
+auto_generated_0__gather_121: 
+    | (dot_token).(identifier)+
+
+auto_generated_0__tmp_123: 
+    | as_token=as_token identifier=identifier { (lambda as_token, identifier: [as_token, identifier])(as_token, identifier) }
+
+auto_generated_0__tmp_124: 
+    | as_token=as_token identifier=identifier { (lambda as_token, identifier: [as_token, identifier])(as_token, identifier) }
+
+auto_generated_0__tmp_125: 
+    | as_token=as_token identifier=identifier { (lambda as_token, identifier: [as_token, identifier])(as_token, identifier) }
+
+auto_generated_0__tmp_126: 
+    | if_token=if_token ready_to_if_expr=ready_to_if_expr { (lambda if_token, ready_to_if_expr: [if_token, ready_to_if_expr])(if_token, ready_to_if_expr) }
+
+

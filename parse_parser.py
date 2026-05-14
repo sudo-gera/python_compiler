@@ -5,13 +5,41 @@ from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from pprint import pprint
 import functools
+import itertools
 import operator
 import re
 
-def wrap_name(name: str) -> str:
+def wrap_name(name: str, prefix: str) -> str:
     if name.startswith('_'):
-        return 'auto_generated_'+ name
+        return prefix + name
     return name
+
+####################################################################################################
+
+attribute_traversal_copy_t = typing.TypeVar('attribute_traversal_copy_t')
+
+def attribute_traversal_copy(obj: attribute_traversal_copy_t, func: typing.Callable[[attribute_traversal_copy_t], attribute_traversal_copy_t], abc: type[typing.Any]) -> attribute_traversal_copy_t:
+    # print(type(obj), func, abc, [(name, isinstance(attr, abc)) for name, attr in vars(obj).items()])
+    def attr_traversal(attr: typing.Any) -> typing.Any:
+        if isinstance(attr, abc):
+            return func(attr)
+        if isinstance(attr, list):
+            return [
+                attr_traversal(el)
+                for el in attr
+            ]
+        if isinstance(attr, tuple):
+            return tuple(attr_traversal(list(attr)))
+        if isinstance(attr, set):
+            return set(attr_traversal(list(attr)))
+        return attr
+        
+    return type(obj)(
+        **{
+            name: attr_traversal(attr)
+            for name, attr in [*vars(obj).items()]
+        }
+    )
 
 ####################################################################################################
 
@@ -22,56 +50,67 @@ class GrammarRule(ABC):
         ...
 
     @abstractmethod
-    def _remove_separated_requences(self, rules: Rules) -> GrammarRule:
-        ...
-
-    @abstractmethod
     def _get_all_created_variables(self) -> list[str]:
         ...
 
-    @abstractmethod
-    def _embed_loops(self, rules: Rules) -> GrammarRule:
-        ...
+    def _remove_separated_sequences(self, rules: Rules) -> GrammarRule:
+        def remove_separated_sequences(obj: GrammarRule) -> GrammarRule:
+            return obj._remove_separated_sequences(rules)
+        return attribute_traversal_copy(self, remove_separated_sequences, GrammarRule)
 
-    @abstractmethod
+    def _remove_embed_loops(self, rules: Rules) -> GrammarRule:
+        def embed_loops(obj: GrammarRule) -> GrammarRule:
+            return obj._remove_embed_loops(rules)
+        return attribute_traversal_copy(self, embed_loops, GrammarRule)
+
     def _wrap_names(self, rules: Rules) -> GrammarRule:
-        ...
+        def wrap_names(obj: GrammarRule) -> GrammarRule:
+            return obj._wrap_names(rules)
+        return attribute_traversal_copy(self, wrap_names, GrammarRule)
 
 class MultiLineRulePart(GrammarRule):
 
-    @abstractmethod
-    def _remove_separated_requences(self, rules: Rules) -> MultiLineRulePart:
-        ...
+    def _remove_separated_sequences(self, rules: Rules) -> MultiLineRulePart:
+        def _remove_separated_requences(obj: MultiLineRulePart) -> MultiLineRulePart:
+            return obj._remove_separated_sequences(rules)
+        return attribute_traversal_copy(self, _remove_separated_requences, MultiLineRulePart)
 
-    @abstractmethod
     def _remove_vars(self, rules: Rules) -> MultiLineRulePart:
-        ...
+        def _remove_vars(obj: MultiLineRulePart) -> MultiLineRulePart:
+            return obj._remove_vars(rules)
+        return attribute_traversal_copy(self, _remove_vars, MultiLineRulePart)
 
-    @abstractmethod
-    def _embed_loops(self, rules: Rules) -> MultiLineRulePart:
-        ...
+    def _remove_embed_loops(self, rules: Rules) -> MultiLineRulePart:
+        def embed_loops(obj: MultiLineRulePart) -> MultiLineRulePart:
+            return obj._remove_embed_loops(rules)
+        return attribute_traversal_copy(self, embed_loops, MultiLineRulePart)
 
-    @abstractmethod
     def _wrap_names(self, rules: Rules) -> MultiLineRulePart:
-        ...
+        def wrap_names(obj: MultiLineRulePart) -> MultiLineRulePart:
+            return obj._wrap_names(rules)
+        return attribute_traversal_copy(self, wrap_names, MultiLineRulePart)
 
 class SingleLineRulePart(MultiLineRulePart):
 
-    @abstractmethod
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        ...
+    def _remove_separated_sequences(self, rules: Rules) -> SingleLineRulePart:
+        def _remove_separated_requences(obj: SingleLineRulePart) -> SingleLineRulePart:
+            return obj._remove_separated_sequences(rules)
+        return attribute_traversal_copy(self, _remove_separated_requences, SingleLineRulePart)
 
-    @abstractmethod
     def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        ...
+        def remove_vars(obj: SingleLineRulePart) -> SingleLineRulePart:
+            return obj._remove_vars(rules)
+        return attribute_traversal_copy(self, remove_vars, SingleLineRulePart)
 
-    @abstractmethod
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        ...
+    def _remove_embed_loops(self, rules: Rules) -> SingleLineRulePart:
+        def embed_loops(obj: SingleLineRulePart) -> SingleLineRulePart:
+            return obj._remove_embed_loops(rules)
+        return attribute_traversal_copy(self, embed_loops, SingleLineRulePart)
 
-    @abstractmethod
     def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        ...
+        def wrap_names(obj: SingleLineRulePart) -> SingleLineRulePart:
+            return obj._wrap_names(rules)
+        return attribute_traversal_copy(self, wrap_names, SingleLineRulePart)
 
 ####################################################################################################
 
@@ -79,26 +118,22 @@ class SingleLineRulePart(MultiLineRulePart):
 class CallRule(SingleLineRulePart):
     rule_name: str
 
-    def to_grammar(self) -> str:
-        return wrap_name(self.rule_name)
+    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
+        return CallRule(
+            rule_name=wrap_name(self.rule_name, rules.unique_prefix),
+        )
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return self
+    def to_grammar(self) -> str:
+        return self.rule_name
 
     def _get_all_created_variables(self) -> list[str]:
         return list()
 
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return self
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
+    def _remove_embed_loops(self, rules: Rules) -> SingleLineRulePart:
         if re.fullmatch(r'^_loop0_.*', self.rule_name):
             called = rules.rules_dict[self.rule_name].rule
             if isinstance(called, SingleLineRulePart):
                 return called._remove_vars(rules)
-        return self
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
         return self
 
 @dataclass(frozen=True)
@@ -108,20 +143,8 @@ class Expect(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"{self.pattern!r}"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return self
-
     def _get_all_created_variables(self) -> list[str]:
         return list()
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return self
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return self
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return self
 
 ####################################################################################################
 
@@ -132,26 +155,16 @@ class FalseIsOk(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"({self.rule.to_grammar()})?"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return FalseIsOk(
-            rule=self.rule._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables()
 
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return FalseIsOk(
-            rule=self.rule._remove_vars(rules),
-        )
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
+    def _remove_embed_loops(self, rules: Rules) -> SingleLineRulePart:
         if isinstance(self.rule, VariableCreator):
             if (True
                 and isinstance(self.rule.rule, CallRule)
                 and re.fullmatch(r'^_loop0_.*', self.rule.rule.rule_name)
             ):
-                return self.rule._embed_loops(rules)
+                return self.rule._remove_embed_loops(rules)
             else:
                 return VariableCreator(
                     rule=FalseIsOk(
@@ -160,12 +173,7 @@ class FalseIsOk(SingleLineRulePart):
                     var_name=self.rule.var_name,
                 )
         return FalseIsOk(
-            rule=self.rule._embed_loops(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return FalseIsOk(
-            rule=self.rule._wrap_names(rules),
+            rule=self.rule._remove_embed_loops(rules),
         )
 
 @dataclass(frozen=True)
@@ -178,28 +186,22 @@ class VariableCreator(SingleLineRulePart):
             return f"{self.var_name}={self.rule.to_grammar()}"
         return f"{self.var_name}=({self.rule.to_grammar()})"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return VariableCreator(
-            rule=self.rule._remove_separated_requences(rules),
-            var_name=self.var_name,
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables() + [self.var_name]
 
     def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
         return self.rule._remove_vars(rules)
 
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
+    def _remove_embed_loops(self, rules: Rules) -> SingleLineRulePart:
         return VariableCreator(
-            rule=self.rule._embed_loops(rules),
+            rule=self.rule._remove_embed_loops(rules),
             var_name=self.var_name,
         )
 
     def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
         return VariableCreator(
             rule=self.rule._wrap_names(rules),
-            var_name=wrap_name(self.var_name),
+            var_name=wrap_name(self.var_name, rules.unique_prefix),
         )
 
 @dataclass(frozen=True)
@@ -210,32 +212,8 @@ class SeparatedSequence(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"({self.separator.to_grammar()}).({self.rule.to_grammar()})+"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return SeparatedSequence(
-            rule=self.rule._remove_separated_requences(rules),
-            separator=self.separator._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables() + self.separator._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return SeparatedSequence(
-            rule=self.rule._embed_loops(rules),
-            separator=self.separator._embed_loops(rules),
-        )
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return SeparatedSequence(
-            rule=self.rule._remove_vars(rules),
-            separator=self.separator._remove_vars(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return SeparatedSequence(
-            rule=self.rule._wrap_names(rules),
-            separator=self.separator._wrap_names(rules),
-        )
 
 @dataclass(frozen=True)
 class MatchIfNotNone(SingleLineRulePart):
@@ -244,28 +222,8 @@ class MatchIfNotNone(SingleLineRulePart):
     def to_grammar(self) -> str:
         assert False
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return MatchIfNotNone(
-            rule=self.rule._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return MatchIfNotNone(
-            rule=self.rule._embed_loops(rules),
-        )
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return MatchIfNotNone(
-            rule=self.rule._remove_vars(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return MatchIfNotNone(
-            rule=self.rule._wrap_names(rules),
-        )
 
 @dataclass(frozen=True)
 class Star(SingleLineRulePart):
@@ -274,28 +232,8 @@ class Star(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"({self.rule.to_grammar()})*"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return Star(
-            rule=self.rule._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return Star(
-            rule=self.rule._embed_loops(rules),
-        )
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return Star(
-            rule=self.rule._remove_vars(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return Star(
-            rule=self.rule._wrap_names(rules),
-        )
 
 @dataclass(frozen=True)
 class PosLookAhead(SingleLineRulePart):
@@ -304,28 +242,8 @@ class PosLookAhead(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"&({self.rule.to_grammar()})"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return PosLookAhead(
-            rule=self.rule._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return PosLookAhead(
-            rule=self.rule._embed_loops(rules),
-        )
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return PosLookAhead(
-            rule=self.rule._remove_vars(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return PosLookAhead(
-            rule=self.rule._wrap_names(rules),
-        )
 
 @dataclass(frozen=True)
 class NegLookAhead(SingleLineRulePart):
@@ -334,28 +252,8 @@ class NegLookAhead(SingleLineRulePart):
     def to_grammar(self) -> str:
         return f"!({self.rule.to_grammar()})"
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
-        return NegLookAhead(
-            rule=self.rule._remove_separated_requences(rules),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return self.rule._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> SingleLineRulePart:
-        return NegLookAhead(
-            rule=self.rule._embed_loops(rules),
-        )
-
-    def _remove_vars(self, rules: Rules) -> SingleLineRulePart:
-        return NegLookAhead(
-            rule=self.rule._remove_vars(rules),
-        )
-
-    def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
-        return NegLookAhead(
-            rule=self.rule._wrap_names(rules),
-        )
 
 ####################################################################################################
 
@@ -423,14 +321,14 @@ class Concat(SingleLineRulePart):
                         )
         return None
 
-    def _remove_separated_requences(self, rules: Rules) -> SingleLineRulePart:
+    def _remove_separated_sequences(self, rules: Rules) -> SingleLineRulePart:
         sep_result = self.__handle_separated_seq(rules)
         if sep_result is not None:
-            return sep_result
+            return sep_result._remove_separated_sequences(rules)
         return Concat(
             rules=tuple(
                 [
-                    rule._remove_separated_requences(rules) for rule in self.rules
+                    rule._remove_separated_sequences(rules) for rule in self.rules
                 ]
             ),
             handler=self.handler,
@@ -443,26 +341,6 @@ class Concat(SingleLineRulePart):
                 rule._get_all_created_variables()
                 for rule in self.rules
             ]
-        )
-
-    def _embed_loops(self, rules: Rules) -> Concat:
-        return Concat(
-            rules=tuple(
-                [
-                    rule._embed_loops(rules) for rule in self.rules
-                ]
-            ),
-            handler=self.handler,
-        )
-
-    def _remove_vars(self, rules: Rules) -> Concat:
-        return Concat(
-            rules=tuple(
-                [
-                    rule._remove_vars(rules) for rule in self.rules
-                ]
-            ),
-            handler=self.handler,
         )
 
     def _wrap_names(self, rules: Rules) -> SingleLineRulePart:
@@ -518,15 +396,6 @@ class Alternatives(MultiLineRulePart):
         )
         return result
 
-    def _remove_separated_requences(self, rules: Rules) -> Alternatives:
-        return Alternatives(
-            rules=tuple(
-                [
-                    rule._remove_separated_requences(rules) for rule in self.rules
-                ]
-            ),
-        )
-
     def _get_all_created_variables(self) -> list[str]:
         return functools.reduce(
             operator.add,
@@ -536,63 +405,24 @@ class Alternatives(MultiLineRulePart):
             ]
         )
 
-    def _remove_vars(self, rules: Rules) -> Alternatives:
-        return Alternatives(
-            rules=tuple(
-                [
-                    rule._remove_vars(rules) for rule in self.rules
-                ]
-            ),
-        )
-
-    def _embed_loops(self, rules: Rules) -> Alternatives:
-        return Alternatives(
-            rules=tuple(
-                [
-                    rule._embed_loops(rules) for rule in self.rules
-                ]
-            ),
-        )
-
-    def _wrap_names(self, rules: Rules) -> Alternatives:
-        return Alternatives(
-            rules=tuple(
-                [
-                    rule._wrap_names(rules) for rule in self.rules
-                ]
-            ),
-        )
-
 ####################################################################################################
 
 @dataclass(frozen=True)
 class Rule(GrammarRule):
     rule: MultiLineRulePart
-    name: str
+    rule_name: str
 
     def to_grammar(self) -> str:
-        return f"{wrap_name(self.name)}: {self.rule.to_grammar()}" + '\n\n'
-
-    def _remove_separated_requences(self, rules: Rules) -> Rule:
-        return Rule(
-            rule=self.rule._remove_separated_requences(rules),
-            name=self.name,
-        )
-
-    def _get_all_created_variables(self) -> list[str]:
-        return self.rule._get_all_created_variables()
-
-    def _embed_loops(self, rules: Rules) -> Rule:
-        return Rule(
-            rule=self.rule._embed_loops(rules),
-            name=self.name,
-        )
+        return f"{self.rule_name}: {self.rule.to_grammar()}" + '\n\n'
 
     def _wrap_names(self, rules: Rules) -> Rule:
         return Rule(
             rule=self.rule._wrap_names(rules),
-            name=wrap_name(self.name),
+            rule_name=wrap_name(self.rule_name, rules.unique_prefix),
         )
+
+    def _get_all_created_variables(self) -> list[str]:
+        return self.rule._get_all_created_variables()
 
 @dataclass(frozen=True)
 class Rules(GrammarRule):
@@ -602,7 +432,7 @@ class Rules(GrammarRule):
     def rules_dict(self) -> dict[str, Rule]:
         return dict(
             [
-                (rule.name, rule)
+                (rule.rule_name, rule)
                 for rule in self.rules
             ]
         )
@@ -615,23 +445,14 @@ class Rules(GrammarRule):
             ]
         )
         return result
-
-    def _remove_separated_requences(self, rules: Rules) -> Rules:
-        return Rules(
-            rules=tuple(
-                [
-                    rule._remove_separated_requences(rules) for rule in self.rules
-                ]
-            ),
-        )
-
+    
     def simplify(self) -> Rules:
-        return (
-            self
-                ._remove_separated_requences(self)
-                ._embed_loops(self)
-                ._wrap_names(self)
-        )
+        self = typing.cast(Rules, self._remove_separated_sequences(self))
+        self = typing.cast(Rules, self._remove_embed_loops(self))
+        assert '=_gather_1 ' in self.to_grammar()
+        self = typing.cast(Rules, self._wrap_names(self))
+        assert '=_gather_1 ' not in self.to_grammar()
+        return self
 
     def _get_all_created_variables(self) -> list[str]:
         return functools.reduce(
@@ -642,40 +463,22 @@ class Rules(GrammarRule):
             ]
         )
 
-    def _embed_loops(self, rules: Rules) -> Rules:
-        return Rules(
-            rules=tuple(
-                [
-                    rule._embed_loops(rules) for rule in self.rules
-                ]
-            ),
-        )
-
-    def _wrap_names(self, rules: Rules) -> Rules:
-        return Rules(
-            rules=tuple(
-                [
-                    rule._wrap_names(rules) for rule in self.rules
-                ]
-            ),
-        )
+    @functools.cached_property
+    def unique_prefix(self) -> str:
+        names = list(self.rules_dict)
+        for n in itertools.count(0):
+            prefix = f'auto_generated_{n}_'
+            if not any([
+                name.startswith(prefix)
+                for name in names
+            ]):
+                return prefix
+        assert False
 
 @dataclass(frozen=True)
-class File(GrammarRule):
+class File:
     subheader: ast.Module
     rules: Rules
-
-    def _remove_separated_requences(self, rules: Rules) -> Rule:
-        assert False
-
-    def _get_all_created_variables(self) -> list[str]:
-        assert False
-
-    def _wrap_names(self, rules: Rules) -> Rule:
-        assert False
-
-    def _embed_loops(self, rules: Rules) -> Rule:
-        assert False
 
     def simplify(self) -> File:
         return File(
@@ -1068,7 +871,7 @@ def fun_traversal(root: ast.FunctionDef) -> Rule:
 
     return Rule(
         rule=fun_body_traversal(root),
-        name=name,
+        rule_name=name,
     )
 
 ####################################################################################################
