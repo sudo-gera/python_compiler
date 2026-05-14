@@ -449,9 +449,7 @@ class Rules(GrammarRule):
     def simplify(self) -> Rules:
         self = typing.cast(Rules, self._remove_separated_sequences(self))
         self = typing.cast(Rules, self._remove_embed_loops(self))
-        assert '=_gather_1 ' in self.to_grammar()
         self = typing.cast(Rules, self._wrap_names(self))
-        assert '=_gather_1 ' not in self.to_grammar()
         return self
 
     def _get_all_created_variables(self) -> list[str]:
