@@ -62,3 +62,6 @@ def test_ast(filepath):
 
 def test_actual_tests_were_used():
     assert walked_files != ['last_failed.py']
+
+if __name__ == '__main__':
+    test_ast(random.choice(walked_files))

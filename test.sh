@@ -36,5 +36,10 @@ python3 -m pegen python.gram -qo "${pegen_py}"
 diff "${pegen_py}" python_parser.py # returns 0 only if equal
 
 echo "${RANDOM}${RANDOM}${RANDOM}${RANDOM}${RANDOM}${RANDOM}" > ./test_seed.txt
+./venv/bin/python3 ./test_all.py
+./venv/bin/python3 ./test_all.py
+./venv/bin/python3 ./test_all.py
+./venv/bin/python3 ./test_all.py
+./venv/bin/python3 ./test_all.py
 ./venv/bin/python3 -m pytest -n auto ./test_all.py
 
